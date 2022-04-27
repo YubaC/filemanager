@@ -1,3 +1,4 @@
+from urllib import response
 import requests,os,shutil
 from tqdm import tqdm
 
@@ -19,7 +20,12 @@ def download(url: str, fname: str):
             size = file.write(data)
             bar.update(size)
 
-response = requests.get("https://api.github.com/repos/espressif/arduino-esp32/releases/latest")
+with open('url.txt','r',encoding='utf-8') as f:
+    url = f.read()
+    f.close()
+
+response = requests.get(url)
+# response = requests.get("https://api.github.com/repos/yubac/filemanager/releases/latest")
 # response = requests.get("https://api.github.com/repos/[用户名]/[仓库名]/releases/latest")
 # print(response.json()["tag_name"])
 # print(response.json()["assets"][0]["browser_download_url"])
@@ -43,24 +49,24 @@ if version != response.json()["tag_name"]:
         f.close()
 
         with open(os.path.join(path,'README.txt'),'w',encoding='utf-8') as f:
-            f.write("这是filemanager更新用的临时文件夹。\n请不要更改这个文件夹下的任何文件，\n更新完成后会自动删除。")
+            f.write("aassddff\n这是filemanager更新用的临时文件夹。\n请不要更改这个文件夹下的任何文件，\n更新完成后会自动删除。")
             f.close()
-        download('https://ghproxy.com/' + response.json()["assets"][0]["browser_download_url"], os.path.join(path,response.json()["assets"][0]["name"]))
-        # download('https://gh.api.99988866.xyz/' + response.json()["assets"][0]["browser_download_url"], os.path.join(path,response.json()["assets"][0]["name"]))
+        download('https://ajrkvs1g.fast-github.tk/' + response.json()["assets"][0]["browser_download_url"], os.path.join(path,response.json()["assets"][0]["name"]))
+        download('https://gh.api.99988866.xyz/' + response.json()["assets"][0]["browser_download_url"], os.path.join(path,response.json()["assets"][0]["name"]))
 
-        os.system('endall.bat')
+        # os.system('endall.bat')
 
         print('Unpackaging......',end='')
 
         os.makedirs(os.path.join(path,'unpackage'))
-        shutil.unpack_archive(os.path.join(path,response.json()["assets"][0]["name"]), os.path.join(path,'unpackage'))
+        # shutil.unpack_archive(os.path.join(path,response.json()["assets"][0]["name"]), os.path.join(path,'unpackage'))
 
         print('Done.')
         print('Deleting the old......',end='')
-        shutil.rmtree(os.path.join(os.getcwd(),'monitor'))
-        shutil.rmtree(os.path.join(os.getcwd(),'fm'))
+        # shutil.rmtree(os.path.join(os.getcwd(),'monitor'))
+        # shutil.rmtree(os.path.join(os.getcwd(),'fm'))
         print('Done.')
 
         with open(os.path.join(path, 'startinstall.bat'), 'w', encoding='utf-8') as f:
-            f.write('start unpackage\start.bat')
+            f.write('start ' + str(path) + r'\unpackage\install.bat')
         os.system(os.path.join(path, 'startinstall.bat'))

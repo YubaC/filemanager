@@ -51,9 +51,15 @@ import json
 command_chosen = 0
 
 exit_flag = False
-
-start_path = os.getcwd()
 now_path = ''
+
+home = os.path.expanduser('~')
+start_path = os.path.join(home, r'AppData\Local\Programs\FileManager\fm')
+if start_path != os.getcwd():
+    path_using = now_path = os.getcwd()
+    os.chdir(start_path)
+else:
+    path_using = start_path
 
 all_size = 0
 all_number = 0
@@ -1449,7 +1455,7 @@ class tk:
 
 
 class terminal_infos:
-    version = '1.0.0'  # 版本
+    version = '1.0.1'  # 版本
     by = 'Yuba Technology'  # 作者
     running_space = {'__name__': '__console__'}  # 运行空间(用于存储变量的)
     exec('''def print(*value):
@@ -1556,12 +1562,14 @@ def run_command(command, terminal, commandinput):
                 inited = False
             elif '-m' in command_inputed:
                 init(terminal)
-                add_to_monitor()
-                terminal.insert('end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
+                if inited:
+                    add_to_monitor()
+                    terminal.insert('end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
             elif '-rm' in command_inputed:
                 init(terminal)
-                delete_from_monitor()
-                terminal.insert('end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
+                if inited:
+                    delete_from_monitor()
+                    terminal.insert('end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
             # terminal.insert('end',command)
             contiune_command()
 
@@ -1694,6 +1702,24 @@ def run_command(command, terminal, commandinput):
                 printchanges(changes, terminal ,'changes')
             contiune_command()
 
+        elif command_inputed[0] == 'show':
+            if '-?' in command_inputed:
+                help('show', terminal)
+            elif len(command_inputed) > 1:
+                if command_inputed[1]== 'monitor':
+                    with open(os.path.join(start_path,'path.txt'), 'r', encoding='utf-8') as f:
+                        monitored = f.read().splitlines()
+                        f.close()
+                    terminal.insert('end', '\n受monitor监控的目录列表:')
+                    if monitored == []:
+                        terminal.insert('end', '\n无') 
+                    else:
+                        for i in monitored:
+                            terminal.insert('end', '\n' + i)
+            else:
+                terminal.insert('end', '\nerror:无效的参数', 'red')
+            contiune_command()
+
         else:
             # terminal.insert('end', command)
             terminal.insert('end', '\nerror:未知的命令', 'red')
@@ -1796,9 +1822,9 @@ def commanddown(inputen):
 
 # 检查更新
 # 写入版本
-with open('version.txt', 'w', encoding='utf-8') as f:
-    f.write(terminal_infos.version)
-    f.close()
+# with open('version.txt', 'w', encoding='utf-8') as f:
+#     f.write(terminal_infos.version)
+#     f.close()
 
 os.system('checkupdate.bat')
 
@@ -1838,9 +1864,9 @@ logo = printlogo.logo()
 for i in logo:
     TerminalText.insert('end', i + '\n')
 
-path_using = start_path
+# path_using = start_path
 # 后面的'green'就是tag标记，他会应用green这个tag的属性
-TerminalText.insert('end', path_using+info_add+'\n', 'green')
+TerminalText.insert('end', path_using + info_add+'\n', 'green')
 TerminalText.insert('end', f'$ ')
 
 # 命令输入框
