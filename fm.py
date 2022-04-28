@@ -2,8 +2,8 @@
 # from concurrent.futures import thread
 # from __future__ import print_function
 import codecs
-from genericpath import isdir
-from glob import glob
+# from genericpath import isdir
+# from glob import glob
 # import encodings
 # from glob import glob
 import os
@@ -42,13 +42,21 @@ import tkinter as tk
 
 from tkinter import *
 from tkinter.ttk import *
-from tkinter import filedialog
+from tkinter import filedialog,Label,Radiobutton
 
 import need.draw as draw
 
 import json
 
+from tkinter.messagebox import askokcancel,showinfo
+
+import windnd
+
+#列表中存储的是元素是元组
+mode_to_select=[('添加文件',0,'+'),('移除文件',1,'-')]
+
 command_chosen = 0
+adder_opened = False
 
 exit_flag = False
 now_path = ''
@@ -82,6 +90,8 @@ now_branch = 0
 window_opened = False
 
 deletes = []
+
+command_inputed = []
 
 _TEXT_BOMS = (
     codecs.BOM_UTF16_BE,
@@ -634,10 +644,102 @@ def newrepo(path_in, terminal):
             f.close()
 
 
-def add(terminal,paths):
-    global command_inputed, inited, changes, process_path, path_using
+def adder(terminal,command):
+    def callRB():
+        global mode
+        mode = mode_to_select[v.get()][2]
+
+    def drag_files(urls):
+        print(urls)
+        paths = ''
+        decodedpaths = []
+        for i in urls:
+            try:
+                decodedpaths.append(i.decode("gb18030"))
+            except:
+                try:
+                    decodedpaths.append(i.decode("utf-8"))
+                except:
+                    paths += 'error:添加:' + i + '失败\n'
+
+        print(decodedpaths)
+        # for i in urls:
+        #     print((i).decode("utf-8"))
+        # showinfo('确认路径', b'\n'.join(urls).decode())
+        
+        
+        paths += '请确认:以下是' + mode + '路径:\n'
+        paths += '\n'.join(decodedpaths)
+        if askokcancel('请确认:' + mode + '路径', str(paths)):
+            # 我也不知道为什么，这个延时不能再短了，不然它会崩溃...
+            time.sleep(1)
+            path_to_process_list = decodedpaths
+            dirs = []
+            files = []
+            for i in path_to_process_list:
+                if os.path.isdir(i):
+                    if not '.filemanager' in i:
+                        dirs.append(i)
+                else:
+                    files.append(i)
+            if dirs != []:
+                command_inputed = []
+                command_inputed.append('add')
+                command_inputed.append('-d')
+                command_inputed.append(mode)
+                add(terminal,dirs,command_inputed)
+
+            if files != []:
+                command_inputed = []
+                command_inputed.append('add')
+                command_inputed.append('-f')
+                command_inputed.append(mode)
+                add(terminal,files,command_inputed)
+
+                # showinfo('确认路径', b'\n'.join(urls).decode())
+    global mode,adder_opened,top
+    def exitbutton():
+        global adder_opened
+        adder_opened = False
+        top.destroy()
+    
+    if command == '!destory':
+        if adder_opened:
+            exitbutton()
+        
+    else:
+        if not adder_opened:
+            adder_opened = True
+            mode = '+'
+            top = Toplevel()
+            top.title('添加/移除文件(文件夹)')
+            top.wm_attributes('-topmost',1)
+            top.geometry("350x100")
+            top.resizable(False, False)
+            icon_for_window(top, icon.img)
+            
+            v = IntVar()
+
+            # ent = tkinter.Entry(top).pack()
+            # ent = tkinter.Entry(top, width=100).grid(row=0)
+            label = Label(top, text='拖拽文件或文件夹至此', font=15, pady=20)
+            label.pack()
+            Radiobutton(top, text='添加文件', value=0, command=callRB, variable=v).pack(side=LEFT,expand=True)
+            Radiobutton(top, text='移除文件', value=1, command=callRB, variable=v).pack(side=RIGHT,expand=True)
+
+
+            windnd.hook_dropfiles(top, func=drag_files)
+            # 进入消息循环
+            # top.mainloop()
+            top.protocol('WM_DELETE_WINDOW', exitbutton)
+
+def add(terminal,paths,command_inputed):
+    global inited, changes, process_path, path_using
     if inited:
-        if command_inputed[1] == '.':
+        if len(command_inputed) == 1: 
+            adder(terminal,'add')
+
+        elif command_inputed[1] == '.':
             for i in changes['changes']:
                 if not i in process_path['changes']:
                     process_path['changes'].append(i)
@@ -678,38 +780,44 @@ def add(terminal,paths):
                         process_path['create'].remove(sourname)
 
         elif '-d' in command_inputed:
-            folder_path = filedialog.askdirectory(initialdir=path_using)
+            if paths != []:
+                folder_path = paths
+            else:
+                folder_path = []
+                folder_path.append(filedialog.askdirectory(initialdir=path_using))
             if '+' in command_inputed:
-                for root, dirs, files in os.walk(folder_path):
-                    if os.path.basename(root) == ".filemanager":
-                        dirs[:] = []  # 忽略当前目录下的子目录
-                        # os.mkdir(os.path.join(root,r'.filemnager/base'))
-                    for name in files:
-                        sourname = os.path.relpath(
-                            os.path.join(root, name), path_using)
-                        if sourname in changes['changes'] and sourname not in process_path['changes']:
-                            process_path['changes'].append(sourname)
-                        if sourname in changes['delete'] and sourname not in process_path['delete']:
-                            process_path['delete'].append(sourname)
-                        if sourname in changes['create'] and sourname not in process_path['create']:
-                            process_path['create'].append(sourname)
+                for i in folder_path:
+                    for root, dirs, files in os.walk(i):
+                        if os.path.basename(root) == ".filemanager":
+                            dirs[:] = []  # 忽略当前目录下的子目录
+                            # os.mkdir(os.path.join(root,r'.filemnager/base'))
+                        for name in files:
+                            sourname = os.path.relpath(
+                                os.path.join(root, name), path_using)
+                            if sourname in changes['changes'] and sourname not in process_path['changes']:
+                                process_path['changes'].append(sourname)
+                            if sourname in changes['delete'] and sourname not in process_path['delete']:
+                                process_path['delete'].append(sourname)
+                            if sourname in changes['create'] and sourname not in process_path['create']:
+                                process_path['create'].append(sourname)
 
             elif '-' in command_inputed:
-                for root, dirs, files in os.walk(folder_path):
-                    if os.path.basename(root) == ".filemanager":
-                        dirs[:] = []  # 忽略当前目录下的子目录
-                        # os.mkdir(os.path.join(root,r'.filemnager/base'))
-                    for name in files:
-                        sourname = os.path.relpath(
-                            os.path.join(root, name), path_using)
-                        if sourname in process_path['changes']:
-                            process_path['changes'].remove(sourname)
-                        if sourname in process_path['delete']:
-                            process_path['delete'].remove(sourname)
-                        if sourname in process_path['create']:
-                            process_path['create'].remove(sourname)
+                for i in folder_path:
+                    for root, dirs, files in os.walk(i):
+                        if os.path.basename(root) == ".filemanager":
+                            dirs[:] = []  # 忽略当前目录下的子目录
+                            # os.mkdir(os.path.join(root,r'.filemnager/base'))
+                        for name in files:
+                            sourname = os.path.relpath(
+                                os.path.join(root, name), path_using)
+                            if sourname in process_path['changes']:
+                                process_path['changes'].remove(sourname)
+                            if sourname in process_path['delete']:
+                                process_path['delete'].remove(sourname)
+                            if sourname in process_path['create']:
+                                process_path['create'].remove(sourname)
 
-        printchanges(process_path, terminal, 'add')
+        printchanges(process_path, terminal, 'changes')
 
     else:
         terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
@@ -941,11 +1049,14 @@ def commit(terminal):
     write_branch(branch)
     print_branch(terminal)
     printchanges(changes, terminal, '!destroy')
-    printchanges(changes, terminal, 'changes')
+    if changes == {'changes': [], 'delete': [], 'create': []}:
+        adder(terminal,'!destory')
+    else:
+        printchanges(changes, terminal, 'changes')
 
 
 def show_changes_in_box(inputen,terminal,mode):
-    global deletes,command_inputed,path_using,window_opened,postwin,processlist,changeslist
+    global deletes,path_using,window_opened,postwin,processlist,changeslist,changes
     v = StringVar()
     v2 = StringVar()
     def delete():
@@ -977,16 +1088,16 @@ def show_changes_in_box(inputen,terminal,mode):
             for i in list(after_delete):
                 adds.append((os.path.join(path_using,i)))
             if adds != []:
-                add(terminal, adds)
+                add(terminal, adds,command_inputed)
                 command_inputed = []
                 command_inputed.append('add')
                 command_inputed.append('-f')
                 command_inputed.append('-')
-                add(terminal,deletes)
+                add(terminal,deletes,command_inputed)
                 deletes = []
             else:
                 command_inputed[2] = '+'
-                add(inputen,[])
+                add(inputen,[],command_inputed)
 
     def add_():
         global command_inputed,deletes
@@ -1078,7 +1189,7 @@ def show_changes_in_box(inputen,terminal,mode):
         command_inputed = []
         command_inputed.append('add')
         command_inputed.append('.')
-        add(terminal,[])
+        add(terminal,[],command_inputed)
 
     else:
         if mode == '!destroy':
@@ -1087,7 +1198,11 @@ def show_changes_in_box(inputen,terminal,mode):
         else:
             if mode == 'changes':
                 changeslist.delete(0,'end')
-                for i in inputen:
+                for i in changes['changes']:
+                    changeslist.insert('end', f'{i}')
+                for i in changes['delete']:
+                    changeslist.insert('end', f'{i}')
+                for i in changes['create']:
                     changeslist.insert('end', f'{i}')
             processlist.delete(0,'end')
             for temp in inputen:
@@ -1096,7 +1211,7 @@ def show_changes_in_box(inputen,terminal,mode):
 
 
 def printchanges(process_path_in, terminal, mode):
-    global changes,path_using
+    global changes,path_using,adder_opened
     # changes_boolean = False
     # add_boolean = False
     out = []
@@ -1108,7 +1223,7 @@ def printchanges(process_path_in, terminal, mode):
     for i in process_path_in['create']:
         out.append(i)
 
-    if out == [] and mode != '!destroy':
+    if out == [] and mode != '!destroy' and changes == {'changes': [], 'delete': [], 'create': []}:
         terminal.insert('end','\n没有最近更改的文件')
         # terminal.delete('0.0','end')
         # terminal.insert('end', '\n没有文件\n')
@@ -1651,7 +1766,7 @@ def run_command(command, terminal, commandinput):
                 help('add', terminal)
             # terminal.insert('end', command)
             else:
-                add(terminal,[])
+                add(terminal,[],command_inputed)
             contiune_command()
 
         elif command_inputed[0] == 'commit':
