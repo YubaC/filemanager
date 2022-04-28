@@ -567,8 +567,16 @@ def newrepo(path_in, terminal):
         # c3.join()
         # gettimestamp(path_in, os.path.join(path_in,r'.filemanager\base'))
         # csvFile = open(csv_path, "r+", encoding='utf-8')
-        f = os.popen('attrib +h ' + os.path.join(path_in, '.filemanager'))
-        f.close()
+        # f = os.popen('attrib +h ' + os.path.join(path_in, '.filemanager'))
+        # f.close()
+
+        with open(os.path.join(path_in,'hide.bat'),'w',encoding='utf-8') as f:
+            f.write('Attrib +h .filemanager\n')
+            f.write('del /S /Q hide.bat')
+            f.close()
+        os.chdir(path_using)
+        os.system('hide.bat')
+        os.chdir(start_path)
 
         all_size = 0
         all_number = 0
@@ -1411,6 +1419,28 @@ def checkout(start, terminal):
     #                         terminal.update()
     #                         terminal.see('end')
 
+    exit_flag = False
+    while True:
+        for ch in ['-', '\\', '|', '/']:
+            terminal.insert('end','\nWaiting......' + ch)
+            # terminal.config(state='d')
+            terminal.update()
+            terminal.see('end')
+            time.sleep(0.1)
+            timestamp = round(time.time())
+            m_time = round(os.stat(os.path.join(
+                path_using, '.filemanager', 'main', 'now_list_doing.csv')).st_mtime)
+            if timestamp - m_time > 10:
+                exit_flag = True
+                break
+            else:
+                print(int(terminal.index('end-1c').split('.')[0]))
+                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0','end')
+        if exit_flag:
+            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0','end')
+            terminal.insert('end','\nWaiting......Done.')
+            break
+
     try:
         changes = {'changes': [], 'delete': [], 'create': []}
         os.remove(os.path.join(
@@ -1455,7 +1485,10 @@ class tk:
 
 
 class terminal_infos:
-    version = '1.0.1'  # 版本
+    with open('version.txt','r',encoding='utf-8') as f:
+        version = f.read()
+        f.close()
+    # version = '1.0.1'  # 版本
     by = 'Yuba Technology'  # 作者
     running_space = {'__name__': '__console__'}  # 运行空间(用于存储变量的)
     exec('''def print(*value):
