@@ -9,3 +9,4 @@ help        显示帮助
 init        加载当前目录下的仓库
 refreash    刷新当前目录下的仓库，耗时较长
 reload      刷新当前目录下的仓库，耗时较短，但需要monitor进行监控
+set         修改仓库的设置

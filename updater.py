@@ -1,7 +1,26 @@
-# import sys
+import sys
 from urllib import response
 import requests,os,shutil
-from tqdm import tqdm
+# from tqdm import tqdm
+
+def StrOfSize(size):
+    '''
+    递归实现，精确为最大单位值 + 小数点后三位
+    '''
+    def strofsize(integer, remainder, level):
+        if integer >= 1024:
+            remainder = integer % 1024
+            integer //= 1024
+            level += 1
+            return strofsize(integer, remainder, level)
+        else:
+            return integer, remainder, level
+
+    units = ['B', 'K', 'M', 'G', 'T', 'PB']
+    integer, remainder, level = strofsize(size, 0, 0)
+    if level+1 > len(units):
+        level = -1
+    return ( '{}.{:>03d}{}'.format(integer, remainder, units[level]) )
 
 def download(url, file_path):
     # 重试计数
@@ -38,62 +57,31 @@ def download(url, file_path):
         r = requests.get(url, stream=True, verify=True, headers=headers)
  
         # "ab"表示追加形式写入文件
-        with open(file_path, "ab") as f, tqdm(
-            desc='Downloading',
-            total=total_size,
-            unit='iB',
-            unit_scale=True,
-            unit_divisor=1024
-        ) as bar:
+        with open(file_path, "ab") as f:
             if count != 1:
                 f.seek(temp_size)
             for chunk in r.iter_content(chunk_size=1024 * 64):
                 if chunk:
                     if old_size:
-                        bar.update(old_size)
+                        # bar.update(old_size)
                         old_size = 0
-                    bar.update(len(chunk))
+                    # bar.update(len(chunk))
                     temp_size += len(chunk)
                     f.write(chunk)
                     f.flush()
-                    ###这是下载实现进度显示####
-                    # done = int(50 * temp_size / total_size)
-                    # sys.stdout.write("\r|%s%s| %d%%" % (
-                    #     '█' * done, ' ' * (50 - done), 100 * temp_size / total_size))
-                    # sys.stdout.flush()
-        # print("\n")
+                    ##这是下载实现进度显示####
+                    done = int(50 * temp_size / total_size)
+                        
+                    sys.stdout.write("\r|%s%s| %d%% %s/%s" % (
+                        '█' * done, ' ' * (50 - done), 100 * temp_size / total_size, StrOfSize(temp_size), StrOfSize(total_size)))
+                    sys.stdout.flush()
+        print("\n")
  
     return file_path
-
-# def download(url: str, fname: str):
-#     # 用流stream的方式获取url的数据
-#     resp = requests.get(url, stream=True)
-#     # 拿到文件的长度，并把total初始化为0
-#     total = int(resp.headers.get('content-length', 0))
-#     # 打开当前目录的fname文件(名字你来传入)
-#     # 初始化tqdm，传入总数，文件名等数据，接着就是写入，更新等操作了
-#     with open(fname, 'wb') as file, tqdm(
-#         desc='Downloading',
-#         total=total,
-#         unit='iB',
-#         unit_scale=True,
-#         unit_divisor=1024,
-#     ) as bar:
-#         for data in resp.iter_content(chunk_size=1024):
-#             size = file.write(data)
-#             bar.update(size)
-
-# with open('url.txt','r',encoding='utf-8') as f:
-#     url = f.read()
-#     f.close()
 
 url = 'https://api.github.com/repos/yubac/filemanager/releases/latest'
 
 response = requests.get(url)
-# response = requests.get("https://api.github.com/repos/yubac/filemanager/releases/latest")
-# response = requests.get("https://api.github.com/repos/[用户名]/[仓库名]/releases/latest")
-# print(response.json()["tag_name"])
-# print(response.json()["assets"][0]["browser_download_url"])
 
 with open ('version.txt','r') as f:
     version = f.read()
@@ -107,13 +95,18 @@ if version != response.json()["tag_name"]:
             path = 'D:\\fmupdate'
         else:
             path = 'C:\\fmupdate'
-        if os.path.exists(path) and not os.path.exists(os.path.join(path, 'not_finished.txt')):
+        if os.path.exists(os.path.join(path, 'not_finished.txt')):
+            with open(os.path.join(path, 'not_finished.txt'), 'r', encoding='utf-8') as f:
+                version_read = f.read()
+        else:
+            version_read = ''
+        if (os.path.exists(path) and not version_read) or (version_read != response.json()["tag_name"] and version_read):
             shutil.rmtree(path)
             os.makedirs(path)
             with open(os.path.join(path, 'not_finished.txt'), 'w', encoding='utf-8') as f:
-                f.write('')
+                f.write(response.json()["tag_name"])
                 f.close()
-        elif not os.path.exists(os.path.join(path, 'not_finished.txt')):
+        elif not version_read:
             os.makedirs(path)
             f = os.popen('attrib +h ' + path)
             f.close()
@@ -130,7 +123,8 @@ if version != response.json()["tag_name"]:
         # os.system('endall.bat')
 
         print('Unpackaging......',end='')
-
+        if os.path.exists(os.path.join(path,'unpackage')):
+            shutil.rmtree(os.path.join(path,'unpackage'))
         os.makedirs(os.path.join(path,'unpackage'))
         shutil.unpack_archive(os.path.join(path,response.json()["assets"][0]["name"]), os.path.join(path,'unpackage'))
 

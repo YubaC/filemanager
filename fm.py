@@ -23,7 +23,7 @@ import hashlib
 import shutil
 # import threading
 import need.printlogo as printlogo
-import need.icon as icon
+# import need.icon as icon
 
 # import ctypes
 
@@ -119,7 +119,7 @@ def writefilehash(path_list):
     global path_using
     top = Toplevel()
     top.title('Hashing......')
-    icon_for_window(top, icon.img)
+    icon_for_window(top)
     pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
     pb.pack(padx=10, pady=20)
     pb["maximum"] = len(path_list)
@@ -320,7 +320,7 @@ def copy(path1, path2):
     # with Progress() as progress:
     top = Toplevel()
     top.title('Copying......')
-    icon_for_window(top, icon.img)
+    icon_for_window(top)
 
     pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
     pb.pack(padx=10, pady=20)
@@ -366,7 +366,7 @@ def createtimestamp(path1, filename):
 
     top = Toplevel()
     top.title('Timestamping......')
-    icon_for_window(top, icon.img)
+    icon_for_window(top)
     pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
     pb.pack(padx=10, pady=20)
     pb["maximum"] = all_number
@@ -420,7 +420,7 @@ def refreash(path_in, terminal):
 
     top = Toplevel()
     top.title('Refreashing......')
-    icon_for_window(top, icon.img)
+    icon_for_window(top)
 
     pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
     pb.pack(padx=10, pady=20)
@@ -891,7 +891,7 @@ def adder(terminal, command):
             top.wm_attributes('-topmost', 1)
             top.geometry("350x100")
             top.resizable(False, False)
-            icon_for_window(top, icon.img)
+            icon_for_window(top)
 
             v = IntVar()
 
@@ -1038,7 +1038,7 @@ def commit(terminal):
     # 复制文件进度条
     top = Toplevel()
     top.title('Committing......')
-    icon_for_window(top, icon.img)
+    icon_for_window(top)
 
     pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
     pb.pack(padx=10, pady=20)
@@ -1310,7 +1310,7 @@ def show_changes_in_box(inputen, terminal, mode):
     if not window_opened:
         window_opened = True
         postwin = tk.Toplevel(root)
-        icon_for_window(postwin, icon.img)
+        icon_for_window(postwin)
         postwin.title('ChangesList')
         postwin.geometry('650x400')
         postwin.transient(root)
@@ -1582,9 +1582,13 @@ def checkout(start, terminal):
 
     file_at_that_time = []
     file_hash_at_that_time = {}
-    for i in timestamps:
-        file_at_that_time.append(i.split(',')[0])
-        file_hash_at_that_time[i.split(',')[0]] = i.split(',')[2]
+    if len(timestamps[0].split(',')) > 2:
+        for i in timestamps:
+            file_at_that_time.append(i.split(',')[0])
+            file_hash_at_that_time[i.split(',')[0]] = i.split(',')[2]
+    else:
+        for i in timestamps:
+            file_at_that_time.append(i.split(',')[0])
 
     # 多出的文件加入删除列表
     file_to_delete = []
@@ -1862,7 +1866,7 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os.path import isfile,isdir,join
 # 新建函数以便将图标载入窗口中
 
-def icon_for_window(tkwindow, filevalue, temofilename='fm.ico'):
+def icon_for_window(tkwindow, temofilename='fm.ico'):
     tkwindow.iconbitmap(temofilename)
 
 # def icon_for_window(tkwindow, filevalue, temofilename='tempicon.ico'):
@@ -2201,7 +2205,7 @@ def post_inputlist(inputen):
         inputen.insert('end', setmessage)
         postwin.destroy()
     postwin = tk.Toplevel(root, bg='#ffffff')
-    icon_for_window(postwin, icon.img)
+    icon_for_window(postwin)
     postwin.title('CommandList')
     postwin.geometry('300x200')
     postwin.transient(root)
@@ -2260,7 +2264,7 @@ root = tk.Tk()
 # 设置标题
 root.title(f'FileManager(FM) {terminal_infos.version}')
 # 设置图标(用这个方法是为了防止打包后找不到图标的)
-icon_for_window(root, icon.img)
+icon_for_window(root)
 # 设置默认大小
 root.geometry('645x400')
 # 让窗口不可改变大小
