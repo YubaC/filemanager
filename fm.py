@@ -8,7 +8,8 @@ import codecs
 # from glob import glob
 import os
 import csv
-import sys
+# from re import I
+# import sys
 # import re
 import time
 import hashlib
@@ -42,18 +43,18 @@ import tkinter as tk
 
 from tkinter import *
 from tkinter.ttk import *
-from tkinter import filedialog,Label,Radiobutton
+from tkinter import filedialog, Label, Radiobutton
 
 import need.draw as draw
 
 import json
 
-from tkinter.messagebox import askokcancel,showinfo
+from tkinter.messagebox import askokcancel
 
 import windnd
 
-#列表中存储的是元素是元组
-mode_to_select=[('添加文件',0,'+'),('移除文件',1,'-')]
+# 列表中存储的是元素是元组
+mode_to_select = [('添加文件', 0, '+'), ('移除文件', 1, '-')]
 
 command_chosen = 0
 adder_opened = False
@@ -101,6 +102,58 @@ _TEXT_BOMS = (
     codecs.BOM_UTF8,
 )
 
+def hash(file_path,Bytes=1024):
+    md5_1 = hashlib.md5()                        #创建一个md5算法对象
+    with open(file_path,'rb') as f:              #打开一个文件，必须是'rb'模式打开
+        while 1:
+            data =f.read(Bytes)                  #由于是一个文件，每次只读取固定字节
+            if data:                             #当读取内容不为空时对读取内容进行update
+                md5_1.update(data)
+            else:                                #当整个文件读完之后停止update
+                break
+    ret = md5_1.hexdigest()                      #获取这个文件的MD5值
+    return ret
+
+
+def writefilehash(path_list):
+    global path_using
+    top = Toplevel()
+    top.title('Hashing......')
+    icon_for_window(top, icon.img)
+    pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
+    pb.pack(padx=10, pady=20)
+    pb["maximum"] = len(path_list)
+    pb["value"] = 0
+    # pb["value"] += 1000
+    top.protocol('WM_DELETE_WINDOW', callback)  # 窗体的通信协议方法
+    top.update()
+
+    # 读取timestamp
+    with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "r", encoding='utf-8') as p:
+        timestamps = p.read().splitlines()
+        p.close()
+    timestamp = []
+    for i in timestamps:
+        timestamp.append(i.split(','))
+    timestamps = []
+    for i in path_list:
+        try:
+            file_hash = hash(os.path.join(path_using,i))
+            for j in range(len(timestamp)):
+                if timestamp[j][0] == i:
+                    timestamp[j][2] = file_hash
+                    pb["value"] += 1
+                    top.update()
+                    break
+            # timestamp[timestamp.index(i)][2] = file_hash
+        except:
+            pass
+    top.destroy()
+    with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
+        for i in timestamp:
+            p.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
+        p.close()
+
 
 def callback():
     pass  # 这个函数不做任何事，实际上让关闭按钮失效
@@ -119,6 +172,37 @@ def is_binary_file(file_path):
     return False
 
 
+def update(terminal):
+    global path_using
+    if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
+        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'),'r',encoding='utf-8') as f:
+            repo_version_loaded = f.read()
+            repo_version = repo_version_loaded.split('.')
+            f.close()
+        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'),'w',encoding='utf-8') as f:
+            f.write(terminal_infos.version)
+            f.close()
+        if int(repo_version[0]) == 1 and int(repo_version[1]) == 0:
+            with open(os.path.join(path_using, '.filemanager','main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
+                timestamp = f.read().splitlines()
+                f.close()
+
+            del timestamp[0]
+
+            paths = []
+            for i in timestamp:
+                paths.append(i.split(',')[0])
+
+            with open(os.path.join(path_using, '.filemanager','main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
+                f.write('dir,timestamp,hash\n')
+                for i in timestamp:
+                    f.write('{0},-1\n'.format(i))
+                f.close()
+            writefilehash(paths)
+    else:
+        terminal.insert('end', "\nerror:这不是一个filemanager仓库", 'red')
+
+
 def init(terminal):
     global id_read
     global inited
@@ -129,77 +213,87 @@ def init(terminal):
     global changes
     global now_at
 
-    if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
-        # 起始提交位置
-        f = open(os.path.join(path_using, '.filemanager',
-                 'main', 'branches.json'), 'r', encoding='utf-8')
-        info_data = json.load(f)
-        f.close()
-        now_at = int(info_data['now_at'])
-
-    # else:
-    #     terminal.insert('end',"error:这不是一个filemanager仓库")
-    # branch = []
-    # now_at = len(os.listdir(os.path.join(path_using,'.filemanager','commits'))) - 1
-
-    if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'id.txt')):
-
-        with open(os.path.join(path_using, '.filemanager', 'main', 'id.txt'), "r", encoding='utf-8') as f:
-            id_read = f.read()
+    if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
+        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'),'r',encoding='utf-8') as f:
+            repo_version_loaded = f.read()
+            repo_version = repo_version_loaded.split('.')
             f.close()
-            # print(id_read)
-            # print(now_path)
+        if int(repo_version[0]) == 1 and int(repo_version[1]) == 0:
+            terminal.insert('end', "\nerror:init失败", 'red')
+            terminal.insert('end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
+        else:
+            if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
+                # 起始提交位置
+                f = open(os.path.join(path_using, '.filemanager',
+                        'main', 'branches.json'), 'r', encoding='utf-8')
+                info_data = json.load(f)
+                f.close()
+                now_at = int(info_data['now_at'])
 
-        terminal.insert('end', '\nIniting......')
-        terminal.update()
+            # else:
+            #     terminal.insert('end',"error:这不是一个filemanager仓库")
+            # branch = []
+            # now_at = len(os.listdir(os.path.join(path_using,'.filemanager','commits'))) - 1
 
-        inited_all_number = 0
-        for root, dirs, files in os.walk(path_using):
-            if os.path.basename(root) == ".filemanager":
-                dirs[:] = []  # 忽略当前目录下的子目录
-                # os.mkdir(os.path.join(root,r'.filemnager/base'))
-            for name in files:
-                all_size += os.path.getsize(os.path.join(root, name))/1024
-                inited_all_number += 1
+            if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'id.txt')):
 
-        # reload(path_using)
+                with open(os.path.join(path_using, '.filemanager', 'main', 'id.txt'), "r", encoding='utf-8') as f:
+                    id_read = f.read()
+                    f.close()
+                    # print(id_read)
+                    # print(now_path)
 
-        inited = True
-        terminal.insert('end', 'Done.' + '\n')
-        # terminal.insert('end',inited_all_number)
-        info_add = '('+id_read[0:6]+'...)'
-        # printchanges(changes, terminal)
+                terminal.insert('end', '\nIniting......')
+                terminal.update()
 
-        print_branch(terminal)
+                inited_all_number = 0
+                for root, dirs, files in os.walk(path_using):
+                    if os.path.basename(root) == ".filemanager":
+                        dirs[:] = []  # 忽略当前目录下的子目录
+                        # os.mkdir(os.path.join(root,r'.filemnager/base'))
+                    for name in files:
+                        all_size += os.path.getsize(os.path.join(root, name))/1024
+                        inited_all_number += 1
+
+                # reload(path_using)
+
+                inited = True
+                terminal.insert('end', 'Done.' + '\n')
+                # terminal.insert('end',inited_all_number)
+                info_add = '('+id_read[0:6]+'...)'
+                # printchanges(changes, terminal)
+
+                print_branch(terminal)
     else:
         terminal.insert('end', "\nerror:这不是一个filemanager仓库", 'red')
 
 
 def add_to_monitor():
     global path_using
-    with open('path.txt','r',encoding='utf-8') as f:
+    with open('path.txt', 'r', encoding='utf-8') as f:
         paths = f.read().splitlines()
         f.close()
     if not path_using in paths:
         paths.append(path_using)
-        with open('path.txt','w',encoding='utf-8') as f:
+        with open('path.txt', 'w', encoding='utf-8') as f:
             for i in paths:
                 f.write(i + '\n')
             f.close()
-        os.system(os.path.join(os.getcwd(),'restartmonitor.bat'))
+        os.system(os.path.join(os.getcwd(), 'restartmonitor.bat'))
+
 
 def delete_from_monitor():
     global path_using
-    with open('path.txt','r',encoding='utf-8') as f:
+    with open('path.txt', 'r', encoding='utf-8') as f:
         paths = f.read().splitlines()
         f.close()
     if path_using in paths:
         paths.remove(path_using)
-        with open('path.txt','w',encoding='utf-8') as f:
+        with open('path.txt', 'w', encoding='utf-8') as f:
             for i in paths:
                 f.write(i + '\n')
             f.close()
-        os.system(os.path.join(os.getcwd(),'restartmonitor.bat'))
+        os.system(os.path.join(os.getcwd(), 'restartmonitor.bat'))
 # 复制文件
 # def copy(path1, path2):
 #     global exit_flag
@@ -266,7 +360,7 @@ def createtimestamp(path1, filename):
     if not os.path.exists(os.path.join(path1, '.filemanager', 'commits')):
         os.makedirs(os.path.join(path1, '.filemanager', 'commits'))
     with open(os.path.join(path1, '.filemanager', 'main', filename), "w", encoding='utf-8') as p:
-        p.write('dir,timestamp' + "\n")
+        p.write('dir,timestamp,hash' + "\n")
         p.close()
     # with Progress() as progress:
 
@@ -287,7 +381,7 @@ def createtimestamp(path1, filename):
                 dirs[:] = []  # 忽略当前目录下的子目录
             for name in files:
                 p.write(os.path.relpath(os.path.join(root, name), path1) +
-                        ','+str(round(os.stat(root + '/' + name).st_mtime))+'\n')
+                        ','+str(round(os.stat(root + '/' + name).st_mtime))+',-1\n')
                 pb["value"] += 1
                 top.update()
         p.close()
@@ -311,6 +405,7 @@ def refreash(path_in, terminal):
     global changes
     walk_loaded = {}
     csv_read = {}
+    csv_read_hash = {}
     change = []
     deleted_files = {}
     new_files = {}
@@ -321,6 +416,7 @@ def refreash(path_in, terminal):
                    'main', 'timestamp.csv'), 'r', encoding='utf-8'))
     for i in f:
         csv_read[i[0]] = i[1]
+        csv_read_hash[i[0]] = i[2]
 
     top = Toplevel()
     top.title('Refreashing......')
@@ -368,9 +464,37 @@ def refreash(path_in, terminal):
     # deleted_files = csv_read.keys() - walk_loaded.keys()
     # new_files = walk_loaded.keys() - csv_read.keys()
 
+    timestamp_to_change = []
     # 把文件写入数组
     for i in diff_vals:
-        change.append(i[0])
+        i_hash = hash(os.path.join(path_in, i[0]))
+        if not i_hash == csv_read_hash[i[0]]:
+            change.append(i[0])
+        else:
+            timestamp_to_change.append(i[0])
+
+    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
+        lines = f.read().splitlines()
+        f.close()
+    timestamp_splited = []
+    for i in lines:
+        timestamp_splited.append(i.split(','))
+    while True:
+        for i in timestamp_to_change:
+            for path in range(len(timestamp_splited)):
+                # print(pth[0])
+                # print(path)
+                if i == timestamp_splited[path][0]:
+                    mtime = str(round(os.stat(os.path.join(path_using, timestamp_splited[path][0])).st_mtime))
+                    timestamp_splited[path][1] = mtime
+                    timestamp_to_change.remove(i)
+                    break
+        if timestamp_to_change == []:
+            break
+    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
+        for i in timestamp_splited:
+            f.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
+        
 
     for i in deleted_files:
         if not i == 'dir':
@@ -405,14 +529,15 @@ def refreash(path_in, terminal):
     create = []
 
 
-def reload(path_in,terminal):
+def reload(path_in, terminal):
     global changes
     csv_read = {}
+    csv_read_hash = {}
     # 获取当前timestamp
     exit_flag = False
     while True:
         for ch in ['-', '\\', '|', '/']:
-            terminal.insert('end','\nWaiting......' + ch)
+            terminal.insert('end', '\nWaiting......' + ch)
             # terminal.config(state='d')
             terminal.update()
             terminal.see('end')
@@ -425,10 +550,11 @@ def reload(path_in,terminal):
                 break
             else:
                 print(int(terminal.index('end-1c').split('.')[0]))
-                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0','end')
+                terminal.delete(terminal.index(
+                    'end-1c').split('.')[0]+'.0', 'end')
         if exit_flag:
-            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0','end')
-            terminal.insert('end','\nWaiting......Done.')
+            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+            terminal.insert('end', '\nWaiting......Done.')
             break
             # time.sleep(1)
 
@@ -481,18 +607,23 @@ def reload(path_in,terminal):
                    'main', 'timestamp.csv'), 'r', encoding='utf-8'))
     for i in f:
         csv_read[i[0]] = i[1]
+        csv_read_hash[i[0]] = i[2]
 
     keys = list(csv_read.keys())
 
     num_new = 0
     num_old = 1
+    timestamp_to_change = []
     while num_new != num_old:
         num_old = num_new
         for i in changes['changes']:
-            if i in keys:
+            i_hash = hash(os.path.join(path_in, i))
+            if i in keys and i_hash != csv_read_hash[i]:
                 mtime = round(os.stat(os.path.join(path_in, i)).st_mtime)
                 if str(mtime) != csv_read[i]:
                     pass
+            elif i in keys and i_hash == csv_read_hash[i]:
+                timestamp_to_change.append(i)
             else:
                 changes['changes'].remove(i)
                 # processed.remove
@@ -515,6 +646,30 @@ def reload(path_in,terminal):
             if not os.path.exists(os.path.join(path_in, i)):
                 changes['create'].remove(i)
         num_new = len(changes['create'])
+
+    # 更新timestamp.csv
+    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
+        lines = f.read().splitlines()
+        f.close()
+    timestamp_splited = []
+    for i in lines:
+        timestamp_splited.append(i.split(','))
+    while True:
+        for i in timestamp_to_change:
+            for path in range(len(timestamp_splited)):
+                # print(pth[0])
+                # print(path)
+                if i == timestamp_splited[path][0]:
+                    mtime = str(round(os.stat(os.path.join(path_using, timestamp_splited[path][0])).st_mtime))
+                    timestamp_splited[path][1] = mtime
+                    timestamp_to_change.remove(i)
+                    changes['changes'].remove(i)
+                    break
+        if timestamp_to_change == []:
+            break
+    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
+        for i in timestamp_splited:
+            f.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
 
     with open(os.path.join(path_in, '.filemanager', 'main', 'now_list_doing.csv'), 'w', encoding='utf-8') as f:
         for i in changes['changes']:
@@ -546,12 +701,15 @@ def newrepo(path_in, terminal):
         terminal.insert('end', '\nerror:这已经是一个filemanager仓库了', 'red')
 
     else:
+        paths = []
         # 计算新仓库内文件总数
         for root, dirs, files in os.walk(path_in):
             if os.path.basename(root) == ".filemanager":
                 dirs[:] = []  # 忽略当前目录下的子目录
             # os.mkdir(os.path.join(root,r'.filemnager/base'))
             for name in files:
+                file_relpath = os.path.relpath(os.path.join(root,name), path_in)
+                paths.append(file_relpath)
                 all_size += os.path.getsize(os.path.join(root, name))/1024
                 all_number += 1
 
@@ -561,6 +719,16 @@ def newrepo(path_in, terminal):
         # c1 = threading.Thread(target=copy,args=(path_in, os.path.join(path_in,r'.filemanager\base')))
         copy(path_in, os.path.join(path_in, r'.filemanager\commits', str_timestamp))
         createtimestamp(path_in, 'timestamp.csv')
+        with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), "r", encoding='utf-8') as p:
+            loaded_timestamp = p.read().splitlines()
+            p.close()
+        del loaded_timestamp[0]
+        with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
+            p.write('dir,timestamp,hash\n')
+            for i in loaded_timestamp:
+                p.write(i + ',-1\n')
+            p.close()
+        writefilehash(paths)
         # c1 = threading.Thread(target=copy, args=(
         #     path_in, os.path.join(path_in, r'.filemanager\base')))
         # c2 = threading.Thread(target=createtimestamp,
@@ -580,7 +748,7 @@ def newrepo(path_in, terminal):
         # f = os.popen('attrib +h ' + os.path.join(path_in, '.filemanager'))
         # f.close()
 
-        with open(os.path.join(path_in,'hide.bat'),'w',encoding='utf-8') as f:
+        with open(os.path.join(path_in, 'hide.bat'), 'w', encoding='utf-8') as f:
             f.write('Attrib +h .filemanager\n')
             f.write('del /S /Q hide.bat')
             f.close()
@@ -631,7 +799,8 @@ def newrepo(path_in, terminal):
         # 提交timestamp
         try:
             if not os.path.exists(os.path.join(path_in, '.filemanager', 'main', 'commits', str_timestamp)):
-                os.makedirs(os.path.join(path_in, '.filemanager', 'main', 'commits', str_timestamp))
+                os.makedirs(os.path.join(path_in, '.filemanager',
+                            'main', 'commits', str_timestamp))
             shutil.copy(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), os.path.join(
                 path_in, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
         except:
@@ -644,7 +813,7 @@ def newrepo(path_in, terminal):
             f.close()
 
 
-def adder(terminal,command):
+def adder(terminal, command):
     def callRB():
         global mode
         mode = mode_to_select[v.get()][2]
@@ -666,8 +835,7 @@ def adder(terminal,command):
         # for i in urls:
         #     print((i).decode("utf-8"))
         # showinfo('确认路径', b'\n'.join(urls).decode())
-        
-        
+
         paths += '请确认:以下是' + mode + '路径:\n'
         paths += '\n'.join(decodedpaths)
         if askokcancel('请确认:' + mode + '路径', str(paths)):
@@ -687,57 +855,60 @@ def adder(terminal,command):
                 command_inputed.append('add')
                 command_inputed.append('-d')
                 command_inputed.append(mode)
-                add(terminal,dirs,command_inputed)
+                add(terminal, dirs, command_inputed)
 
             if files != []:
                 command_inputed = []
                 command_inputed.append('add')
                 command_inputed.append('-f')
                 command_inputed.append(mode)
-                add(terminal,files,command_inputed)
+                add(terminal, files, command_inputed)
 
                 # showinfo('确认路径', b'\n'.join(urls).decode())
-    global mode,adder_opened,top
+    global mode, adder_opened, top
+
     def exitbutton():
         global adder_opened
         adder_opened = False
         top.destroy()
-    
+
     if command == '!destory':
         if adder_opened:
             exitbutton()
-        
+
     else:
         if not adder_opened:
             adder_opened = True
             mode = '+'
             top = Toplevel()
             top.title('添加/移除文件(文件夹)')
-            top.wm_attributes('-topmost',1)
+            top.wm_attributes('-topmost', 1)
             top.geometry("350x100")
             top.resizable(False, False)
             icon_for_window(top, icon.img)
-            
+
             v = IntVar()
 
             # ent = tkinter.Entry(top).pack()
             # ent = tkinter.Entry(top, width=100).grid(row=0)
             label = Label(top, text='拖拽文件或文件夹至此', font=15, pady=20)
             label.pack()
-            Radiobutton(top, text='添加文件', value=0, command=callRB, variable=v).pack(side=LEFT,expand=True)
-            Radiobutton(top, text='移除文件', value=1, command=callRB, variable=v).pack(side=RIGHT,expand=True)
-
+            Radiobutton(top, text='添加文件', value=0, command=callRB,
+                        variable=v).pack(side=LEFT, expand=True)
+            Radiobutton(top, text='移除文件', value=1, command=callRB,
+                        variable=v).pack(side=RIGHT, expand=True)
 
             windnd.hook_dropfiles(top, func=drag_files)
             # 进入消息循环
             # top.mainloop()
             top.protocol('WM_DELETE_WINDOW', exitbutton)
 
-def add(terminal,paths,command_inputed):
+
+def add(terminal, paths, command_inputed):
     global inited, changes, process_path, path_using
     if inited:
-        if len(command_inputed) == 1: 
-            adder(terminal,'add')
+        if len(command_inputed) == 1:
+            adder(terminal, 'add')
 
         elif command_inputed[1] == '.':
             for i in changes['changes']:
@@ -784,7 +955,8 @@ def add(terminal,paths,command_inputed):
                 folder_path = paths
             else:
                 folder_path = []
-                folder_path.append(filedialog.askdirectory(initialdir=path_using))
+                folder_path.append(
+                    filedialog.askdirectory(initialdir=path_using))
             if '+' in command_inputed:
                 for i in folder_path:
                     for root, dirs, files in os.walk(i):
@@ -832,6 +1004,7 @@ def commit(terminal):
     global now_at
     global changes
     commit_size = 0
+    commit_files_number = 0
     changes_path = []
     delete_path = []
     copy_path = []
@@ -839,11 +1012,13 @@ def commit(terminal):
     # 计算提交的文件的大小
     for i in process_path['changes']:
         commit_size += os.path.getsize(os.path.join(path_using, i))/1024
+        commit_files_number += 1
         copy_path.append(i)
     # for i in process_path['delete']:
     #     commit_size += os.path.getsize(os.path.join(path_using, i))/1024
     for i in process_path['create']:
         commit_size += os.path.getsize(os.path.join(path_using, i))/1024
+        commit_files_number += 1
         copy_path.append(i)
 
     # 获取当前timestamp
@@ -909,7 +1084,7 @@ def commit(terminal):
                             round(os.stat(os.path.join(path_using, path)).st_mtime))
                         pth[1] = mtime
                         changes_path.remove(path)
-                        timestamps[number] = pth[0] + ',' + pth[1]
+                        timestamps[number] = pth[0] + ',' + pth[1] + ',-1'
                         # print(number)
                 number += 1
             if changes_path == []:
@@ -936,11 +1111,14 @@ def commit(terminal):
         for path in process_path['create']:
             mtime = str(
                 round(os.stat(os.path.join(path_using, path)).st_mtime))
-            timestamps.append(path + ',' + mtime)
+            timestamps.append(path + ',' + mtime + ',-1')
 
         for i in timestamps:
             p.write(i + '\n')
         p.close()
+
+        # 更新hash值
+        writefilehash(copy_path)
 
         # 记录提交注释
         if not os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp)):
@@ -967,9 +1145,10 @@ def commit(terminal):
         # 提交timestamp.csv
         # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'create')):
     try:
-        shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'),os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
+        shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), os.path.join(
+            path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
     except:
-        terminal.insert('end','\nerror:提交timestamp失败','red')
+        terminal.insert('end', '\nerror:提交timestamp失败', 'red')
 
     with open(os.path.join(path_using, '.filemanager', 'main', 'now_list_doing.csv'), 'r+', encoding='utf-8') as f:
         chan = f.read().splitlines()
@@ -1050,22 +1229,23 @@ def commit(terminal):
     print_branch(terminal)
     printchanges(changes, terminal, '!destroy')
     if changes == {'changes': [], 'delete': [], 'create': []}:
-        adder(terminal,'!destory')
+        adder(terminal, '!destory')
     else:
         printchanges(changes, terminal, 'changes')
 
 
-def show_changes_in_box(inputen,terminal,mode):
-    global deletes,path_using,window_opened,postwin,processlist,changeslist,changes
+def show_changes_in_box(inputen, terminal, mode):
+    global deletes, path_using, window_opened, postwin, processlist, changeslist, changes
     v = StringVar()
     v2 = StringVar()
+
     def delete():
-        global command_inputed,deletes
+        global command_inputed, deletes
         items = list(map(int, processlist.curselection()))
         if(len(items) == 0):
-            print ("No items")
+            print("No items")
         else:
-            print (items)
+            print(items)
             before_delete = set(eval(v2.get()))
             for i in items:
                 processlist.delete(i)
@@ -1077,7 +1257,7 @@ def show_changes_in_box(inputen,terminal,mode):
             after_delete = set(eval(v2.get()))
 
             for i in list(before_delete - after_delete):
-                deletes.append(os.path.join(path_using,i))
+                deletes.append(os.path.join(path_using, i))
 
             print(deletes)
             command_inputed = []
@@ -1086,27 +1266,27 @@ def show_changes_in_box(inputen,terminal,mode):
             command_inputed.append('+')
             adds = []
             for i in list(after_delete):
-                adds.append((os.path.join(path_using,i)))
+                adds.append((os.path.join(path_using, i)))
             if adds != []:
-                add(terminal, adds,command_inputed)
+                add(terminal, adds, command_inputed)
                 command_inputed = []
                 command_inputed.append('add')
                 command_inputed.append('-f')
                 command_inputed.append('-')
-                add(terminal,deletes,command_inputed)
+                add(terminal, deletes, command_inputed)
                 deletes = []
             else:
                 command_inputed[2] = '+'
-                add(inputen,[],command_inputed)
+                add(inputen, [], command_inputed)
 
     def add_():
-        global command_inputed,deletes
+        global command_inputed, deletes
         items = list(map(int, changeslist.curselection()))
 
         if(len(items) == 0):
-            print ("No items")
+            print("No items")
         else:
-            print (items)
+            print(items)
             lists = list(eval(v.get()))
             exists = list(eval(v2.get()))
 
@@ -1119,7 +1299,7 @@ def show_changes_in_box(inputen,terminal,mode):
         window_opened = False
         postwin.destroy()
 
-            # print(list(eval(v.get())))
+        # print(list(eval(v.get())))
     # 弹出效果展示中的命令列表
     if not window_opened:
         window_opened = True
@@ -1138,10 +1318,9 @@ def show_changes_in_box(inputen,terminal,mode):
         yscrollbar = tk.Scrollbar(changeslist)
 
         changeslist.config(yscrollcommand=yscrollbar.set, fg='#ffffff', selectforeground='black',
-                                selectbackground='#ffffff', bg='#000000', font=('terminal', 16), selectmode='multiple',listvariable=v)
+                           selectbackground='#ffffff', bg='#000000', font=('terminal', 16), selectmode='multiple', listvariable=v)
 
         yscrollbar.config(command=changeslist.yview)
-
 
         yscrollbar.pack(side=RIGHT, fill=Y)
         changeslist.config(yscrollcommand=yscrollbar.set)
@@ -1155,15 +1334,13 @@ def show_changes_in_box(inputen,terminal,mode):
         for temp in inputen:
             changeslist.insert('end', f'{temp}')
 
-
         processlist = tk.Listbox(postwin)
         yscrollbar2 = tk.Scrollbar(processlist)
 
         processlist.config(yscrollcommand=yscrollbar2.set, fg='#ffffff', selectforeground='black',
-                                selectbackground='#ffffff', bg='#000000', font=('terminal', 16), selectmode='multiple',listvariable=v2)
+                           selectbackground='#ffffff', bg='#000000', font=('terminal', 16), selectmode='multiple', listvariable=v2)
 
         yscrollbar2.config(command=processlist.yview)
-
 
         yscrollbar2.pack(side=RIGHT, fill=Y)
         processlist.config(yscrollcommand=yscrollbar2.set)
@@ -1179,17 +1356,17 @@ def show_changes_in_box(inputen,terminal,mode):
         for temp in inputen:
             processlist.insert('end', f'{temp}')
 
-        deleter = Button(postwin,text="删除",command=delete)
-        adder = Button(postwin,text="添加",command=add_)
+        deleter = Button(postwin, text="删除", command=delete)
+        adder = Button(postwin, text="添加", command=add_)
         # theButton = Button(master, text="删除", command=lambda x=listbox: x.delete("active"))
-        deleter.pack(side = LEFT)
-        adder.pack(side = RIGHT)
+        deleter.pack(side=LEFT)
+        adder.pack(side=RIGHT)
 
         # 缓存文件
         command_inputed = []
         command_inputed.append('add')
         command_inputed.append('.')
-        add(terminal,[],command_inputed)
+        add(terminal, [], command_inputed)
 
     else:
         if mode == '!destroy':
@@ -1197,21 +1374,21 @@ def show_changes_in_box(inputen,terminal,mode):
             window_opened = False
         else:
             if mode == 'changes':
-                changeslist.delete(0,'end')
+                changeslist.delete(0, 'end')
                 for i in changes['changes']:
                     changeslist.insert('end', f'{i}')
                 for i in changes['delete']:
                     changeslist.insert('end', f'{i}')
                 for i in changes['create']:
                     changeslist.insert('end', f'{i}')
-            processlist.delete(0,'end')
+            processlist.delete(0, 'end')
             for temp in inputen:
                 processlist.insert('end', f'{temp}')
         # commandlist.delete('1.0', END)
 
 
 def printchanges(process_path_in, terminal, mode):
-    global changes,path_using,adder_opened
+    global changes, path_using, adder_opened
     # changes_boolean = False
     # add_boolean = False
     out = []
@@ -1224,7 +1401,7 @@ def printchanges(process_path_in, terminal, mode):
         out.append(i)
 
     if out == [] and mode != '!destroy' and changes == {'changes': [], 'delete': [], 'create': []}:
-        terminal.insert('end','\n没有最近更改的文件')
+        terminal.insert('end', '\n没有最近更改的文件')
         # terminal.delete('0.0','end')
         # terminal.insert('end', '\n没有文件\n')
 
@@ -1234,7 +1411,7 @@ def printchanges(process_path_in, terminal, mode):
     #         terminal.insert('end', i + '\n')
 
     else:
-        show_changes_in_box(out,terminal,mode)
+        show_changes_in_box(out, terminal, mode)
         # with open(rf'{os.getcwd()}\cache.txt', 'w', encoding='utf-8') as f:
         #     f.write('更改的文件列表，确认后请关闭记事本:\n')
         #     for i in out:
@@ -1407,7 +1584,8 @@ def checkout(start, terminal):
         if os.path.basename(root) == ".filemanager":
             dirs[:] = []  # 忽略当前目录下的子目录
         for name in files:
-            file_realtive_path = os.path.relpath(os.path.join(root, name), path_using)
+            file_realtive_path = os.path.relpath(
+                os.path.join(root, name), path_using)
             if not file_realtive_path in file_at_that_time and file_realtive_path not in file_to_delete:
                 file_to_delete.append(file_realtive_path)
 
@@ -1417,9 +1595,10 @@ def checkout(start, terminal):
         file_changed_in_dir_to_delete.append(str(i))
 
     for i in file_changed_in_dir_to_delete:
-        for root, dirs, files in os.walk(os.path.join(path_using,'.filemanager','commits',i)):
+        for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
             for name in files:
-                file_realtive_path = os.path.relpath(os.path.join(root, name), os.path.join(path_using,'.filemanager', 'commits', i))
+                file_realtive_path = os.path.relpath(os.path.join(
+                    root, name), os.path.join(path_using, '.filemanager', 'commits', i))
                 if file_realtive_path in file_at_that_time and file_realtive_path not in file_to_delete:
                     file_to_delete.append(file_realtive_path)
 
@@ -1427,20 +1606,22 @@ def checkout(start, terminal):
     for i in file_to_delete:
         if os.path.exists(os.path.join(path_using, i)):
             try:
-                terminal.insert('end', '\nremoving:'+str(os.path.join(path_using, i))+'\n')
+                terminal.insert('end', '\nremoving:' +
+                                str(os.path.join(path_using, i))+'\n')
                 terminal.update()
                 terminal.see('end')
                 os.remove(os.path.join(path_using, i))
                 if not os.listdir(os.path.dirname(os.path.join(path_using, i))):
                     try:
-                        os.removedirs(os.path.dirname(os.path.join(path_using, i)))
+                        os.removedirs(os.path.dirname(
+                            os.path.join(path_using, i)))
                     except:
                         pass
             except:
                 terminal.insert('end', '\nerror:'+i+'删除失败\n', 'red')
                 terminal.update()
                 terminal.see('end')
-    
+
     # 复制文件
 
     file_copy_dir = []
@@ -1450,16 +1631,20 @@ def checkout(start, terminal):
     file_copy_dir.reverse()
 
     for i in file_copy_dir:
-        for root, dirs, files in os.walk(os.path.join(path_using,'.filemanager','commits',i)):
+        for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
             for name in files:
-                file_realtive_path = os.path.relpath(os.path.join(root, name), os.path.join(path_using,'.filemanager', 'commits', i))
+                file_realtive_path = os.path.relpath(os.path.join(
+                    root, name), os.path.join(path_using, '.filemanager', 'commits', i))
                 if file_realtive_path in file_at_that_time:
                     try:
-                        target_dir = os.path.dirname(os.path.join(path_using, file_realtive_path))
+                        target_dir = os.path.dirname(
+                            os.path.join(path_using, file_realtive_path))
                         if target_dir != '' and not os.path.exists(target_dir):
                             os.makedirs(target_dir)
-                        shutil.copy(os.path.join(root,name),os.path.join(path_using, file_realtive_path))
-                        terminal.insert('end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
+                        shutil.copy(os.path.join(root, name), os.path.join(
+                            path_using, file_realtive_path))
+                        terminal.insert(
+                            'end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
                         terminal.update()
                         terminal.see('end')
                     except:
@@ -1467,7 +1652,6 @@ def checkout(start, terminal):
                             'end', '\nerror:'+str(os.path.join(root, name))+'导出失败\n', 'red')
                         terminal.update()
                         terminal.see('end')
-
 
     # for i in dir_using:
     #     for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
@@ -1537,7 +1721,7 @@ def checkout(start, terminal):
     exit_flag = False
     while True:
         for ch in ['-', '\\', '|', '/']:
-            terminal.insert('end','\nWaiting......' + ch)
+            terminal.insert('end', '\nWaiting......' + ch)
             # terminal.config(state='d')
             terminal.update()
             terminal.see('end')
@@ -1550,10 +1734,11 @@ def checkout(start, terminal):
                 break
             else:
                 print(int(terminal.index('end-1c').split('.')[0]))
-                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0','end')
+                terminal.delete(terminal.index(
+                    'end-1c').split('.')[0]+'.0', 'end')
         if exit_flag:
-            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0','end')
-            terminal.insert('end','\nWaiting......Done.')
+            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+            terminal.insert('end', '\nWaiting......Done.')
             break
 
     try:
@@ -1565,6 +1750,46 @@ def checkout(start, terminal):
         with open(os.path.join(path_using, '.filemanager', 'main', 'now_list_doing.csv'), 'w', encoding='utf-8') as f:
             f.write('')
             f.close()
+
+        # 更新hash值
+        with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "r", encoding='utf-8') as p:
+            timestamps = p.read().splitlines()
+            p.close()
+        timestamp = []
+        for i in timestamps:
+            timestamp.append(i.split(','))
+
+        with open(os.path.join(path_using, '.filemanager', 'main', 'commits', str(float_dir[start]), 'timestamp.csv'), "r", encoding='utf-8') as p:
+            timestamps = p.read().splitlines()
+            p.close()
+        hashes_old = []
+        for i in timestamps:
+            hashes_old.append(i.split(','))
+        timestamps = []
+
+        if len(hashes_old[0]) == 3:
+            for i in range(len(timestamp)):
+                if timestamp[i][0] == hashes_old[i][0]:
+                    timestamp[i][2] = hashes_old[i][2]
+                else:
+                    for j in hashes_old:
+                        if timestamp[i][0] == j[0]:
+                            timestamp[i][2] = j[2]
+
+            with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
+                for i in timestamp:
+                    p.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
+
+        else:
+            csv_path = os.path.join(path_using, '.filemanager', 'main', 'commits', str(float_dir[start]),'timestamp.csv')
+            hash_path = []
+            for i in hashes_old:
+                hash_path.append(i[0])
+            del hash_path[0]
+            writefilehash(hash_path)
+            os.remove(csv_path)
+            shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), csv_path)
+        
     except:
         terminal.insert('end', '\nerror:检出timestamp失败', 'red')
 
@@ -1580,7 +1805,7 @@ def checkout(start, terminal):
 
 def help(inputten, terminal):
     global start_path
-    with open(os.path.join(start_path,'help',inputten+'.txt'), 'r') as f:
+    with open(os.path.join(start_path, 'help', inputten+'.txt'), 'r') as f:
         help_command = f.read().splitlines()
         f.close()
     for i in help_command:
@@ -1600,7 +1825,7 @@ class tk:
 
 
 class terminal_infos:
-    with open('version.txt','r',encoding='utf-8') as f:
+    with open('version.txt', 'r', encoding='utf-8') as f:
         version = f.read()
         f.close()
     # version = '1.0.1'  # 版本
@@ -1638,7 +1863,7 @@ def icon_for_window(tkwindow, filevalue, temofilename='tempicon.ico'):
 
 
 def run_command(command, terminal, commandinput):
-    global path_using, command_inputed, inited, now_path, start_path, info_add, commit_text, now_at, command_chosen,changes,process_path
+    global path_using, command_inputed, inited, now_path, start_path, info_add, commit_text, now_at, command_chosen, changes, process_path
 
     def contiune_command():
         terminal.insert('end', '\n')
@@ -1692,7 +1917,6 @@ def run_command(command, terminal, commandinput):
         if command_inputed[0] == "?" or command_inputed[0] == "help":
             help('help', terminal)
             contiune_command()
-            
 
         elif command_inputed[0] == "init":
             if len(command_inputed) == 1:
@@ -1708,16 +1932,23 @@ def run_command(command, terminal, commandinput):
             elif '-exit' in command_inputed:
                 # terminal.insert('end', command)
                 inited = False
+            elif '-update' in command_inputed:
+                update(terminal)
+                init(terminal)
             elif '-m' in command_inputed:
                 init(terminal)
-                if inited:
-                    add_to_monitor()
-                    terminal.insert('end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
+                terminal.insert(
+                    'end', '\nWARNING:命令"init -m"在fillemanager 1.1.0版本被弃用。使用命令"set monitor on"以替代。', 'yellow')
+                # if inited:
+                #     add_to_monitor()
+                #     terminal.insert('end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
             elif '-rm' in command_inputed:
                 init(terminal)
-                if inited:
-                    delete_from_monitor()
-                    terminal.insert('end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
+                terminal.insert(
+                    'end', '\nWARNING:命令"init -rm"在fillemanager 1.1.0版本被弃用。使用命令"set monitor off"以替代。', 'yellow')
+                # if inited:
+                #     delete_from_monitor()
+                #     terminal.insert('end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
             # terminal.insert('end',command)
             contiune_command()
 
@@ -1766,7 +1997,7 @@ def run_command(command, terminal, commandinput):
                 help('add', terminal)
             # terminal.insert('end', command)
             else:
-                add(terminal,[],command_inputed)
+                add(terminal, [], command_inputed)
             contiune_command()
 
         elif command_inputed[0] == 'commit':
@@ -1803,7 +2034,7 @@ def run_command(command, terminal, commandinput):
                 help('diff', terminal)
                 contiune_command()
             else:
-            # terminal.insert('end', command)
+                # terminal.insert('end', command)
                 diff(terminal)
                 contiune_command()
 
@@ -1844,26 +2075,54 @@ def run_command(command, terminal, commandinput):
         elif command_inputed[0] == 'reload':
             if '-?' in command_inputed:
                 help('init', terminal)
+            elif inited:
+                # terminal.insert('end', command)
+                reload(path_using, terminal)
+                printchanges(changes, terminal, 'changes')
             else:
-            # terminal.insert('end', command)
-                reload(path_using,terminal)
-                printchanges(changes, terminal ,'changes')
+                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
             contiune_command()
 
         elif command_inputed[0] == 'show':
             if '-?' in command_inputed:
                 help('show', terminal)
             elif len(command_inputed) > 1:
-                if command_inputed[1]== 'monitor':
-                    with open(os.path.join(start_path,'path.txt'), 'r', encoding='utf-8') as f:
+                if command_inputed[1] == 'monitor':
+                    with open(os.path.join(start_path, 'path.txt'), 'r', encoding='utf-8') as f:
                         monitored = f.read().splitlines()
                         f.close()
                     terminal.insert('end', '\n受monitor监控的目录列表:')
                     if monitored == []:
-                        terminal.insert('end', '\n无') 
+                        terminal.insert('end', '\n无')
                     else:
                         for i in monitored:
                             terminal.insert('end', '\n' + i)
+            else:
+                terminal.insert('end', '\nerror:无效的参数', 'red')
+            contiune_command()
+
+        elif command_inputed[0] == 'set':
+            if '-?' in command_inputed:
+                help('set', terminal)
+            elif len(command_inputed) > 2:
+                if command_inputed[1] == 'monitor':
+                    if command_inputed[2] == 'on':
+                        if inited:
+                            add_to_monitor()
+                            terminal.insert(
+                                'end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
+                        else:
+                            terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                    elif command_inputed[2] == 'off':
+                        if inited:
+                            delete_from_monitor()
+                            terminal.insert(
+                                'end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
+                        else:
+                            terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                    else:
+                        terminal.insert('end', '\nerror:无效的参数', 'red')
+
             else:
                 terminal.insert('end', '\nerror:无效的参数', 'red')
             contiune_command()
@@ -1898,7 +2157,7 @@ def print_branch(terminal):
 
     draw_branch = draw.draw(branch, now_at)
 
-    colors = ['red', 'green', 'blue', 'cyan']
+    colors = ['red', 'green', 'blue', 'cyan', 'yellow']
     k = {}
     for i in draw_branch:
         terminal.insert('end', '\n')
@@ -1907,8 +2166,8 @@ def print_branch(terminal):
             if i[j] == "|":
                 if not j in list(k.keys()):
                     l = len(k)
-                    while l >= 4:
-                        l -= 4
+                    while l >= len(colors):
+                        l -= len(colors)
                     k[j] = l
                 terminal.insert('end', i[j], colors[k[j]])
             elif i[j] == '-' or i[j] == '\\' or i[j] == '/' or i[j] == '+':
@@ -1974,6 +2233,7 @@ def commanddown(inputen):
 #     f.write(terminal_infos.version)
 #     f.close()
 
+
 os.system('checkupdate.bat')
 
 
@@ -1986,7 +2246,7 @@ icon_for_window(root, icon.img)
 # 设置默认大小
 root.geometry('645x400')
 # 让窗口不可改变大小
-root.resizable(False, False)
+# root.resizable(False, False)
 
 # 新建Text控件
 TerminalText = tk.ScrolledText(root, state='d', fg='white', bg='black', insertbackground='white', font=(
@@ -2004,6 +2264,8 @@ TerminalText.tag_config('cyan', foreground='cyan',
                         selectforeground='red', selectbackground='#ffffff')
 TerminalText.tag_config('slategray', foreground='slategray',
                         selectforeground='#8f7f6f', selectbackground='#ffffff')
+TerminalText.tag_config('yellow', foreground='#ffff7e',
+                        selectforeground='blue', selectbackground='#ffffff')
 
 TerminalText['state'] = 'n'
 # TerminalText.insert('end',f'EasyTerminal {terminal_infos.version} By {terminal_infos.by}\n')
