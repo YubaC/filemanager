@@ -680,6 +680,12 @@ def reload(path_in, terminal):
             f.write('file_created,' + i + '\n')
         f.close()
 
+    with open(f'{os.getcwd()}\path.txt', 'r', encoding='utf-8') as f:
+        paths = f.read().splitlines()
+        f.close()
+    if not path_in in paths:
+        terminal.insert('end','\nWARNING:位于{0}的仓库并没有被monitor所监控，您的更改可能不会被察觉。请使用"refreash"命令以加载完整变更。'.format(str(path_in)),'yellow')
+
 # 新建仓库的命令
 
 
@@ -1575,8 +1581,10 @@ def checkout(start, terminal):
         p.close()
 
     file_at_that_time = []
+    file_hash_at_that_time = {}
     for i in timestamps:
         file_at_that_time.append(i.split(',')[0])
+        file_hash_at_that_time[i.split(',')[0]] = i.split(',')[2]
 
     # 多出的文件加入删除列表
     file_to_delete = []
@@ -1601,6 +1609,15 @@ def checkout(start, terminal):
                     root, name), os.path.join(path_using, '.filemanager', 'commits', i))
                 if file_realtive_path in file_at_that_time and file_realtive_path not in file_to_delete:
                     file_to_delete.append(file_realtive_path)
+
+    # 计算并比较有更改的文件的hash值
+    remove_from_delete_list = []
+    for i in list(file_hash_at_that_time.keys()):
+        if os.path.exists(os.path.join(path_using,i)):
+            if hash(os.path.join(path_using,i)) == file_hash_at_that_time[i]:
+                remove_from_delete_list.append(i)
+
+    file_to_delete = set(file_to_delete) - set(remove_from_delete_list)
 
     # 删除文件
     for i in file_to_delete:
@@ -1641,12 +1658,11 @@ def checkout(start, terminal):
                             os.path.join(path_using, file_realtive_path))
                         if target_dir != '' and not os.path.exists(target_dir):
                             os.makedirs(target_dir)
-                        shutil.copy(os.path.join(root, name), os.path.join(
-                            path_using, file_realtive_path))
-                        terminal.insert(
-                            'end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
-                        terminal.update()
-                        terminal.see('end')
+                        if not os.path.exists(os.path.join(path_using, file_realtive_path)):
+                            shutil.copy(os.path.join(root, name), os.path.join(path_using, file_realtive_path))
+                            terminal.insert('end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
+                            terminal.update()
+                            terminal.see('end')
                     except:
                         terminal.insert(
                             'end', '\nerror:'+str(os.path.join(root, name))+'导出失败\n', 'red')
@@ -1846,18 +1862,20 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os.path import isfile,isdir,join
 # 新建函数以便将图标载入窗口中
 
+def icon_for_window(tkwindow, filevalue, temofilename='fm.ico'):
+    tkwindow.iconbitmap(temofilename)
 
-def icon_for_window(tkwindow, filevalue, temofilename='tempicon.ico'):
-    try:
-        import base64
-        tmp = open(temofilename, "wb+")
-        tmp.write(base64.b64decode(filevalue))
-        tmp.close()
-        tkwindow.iconbitmap(temofilename)
-        from os import remove
-        remove(temofilename)
-    except:
-        pass
+# def icon_for_window(tkwindow, filevalue, temofilename='tempicon.ico'):
+#     try:
+#         import base64
+#         tmp = open(temofilename, "wb+")
+#         tmp.write(base64.b64decode(filevalue))
+#         tmp.close()
+#         tkwindow.iconbitmap(temofilename)
+#         from os import remove
+#         remove(temofilename)
+#     except:
+#         pass
 
 # 运行输入的内容调用的函数
 
