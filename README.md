@@ -3,17 +3,32 @@
 <img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/ico.png">
 
 ## Welcome to FileManager ##
-
 <p>
-<a href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/forks/YubaC/filemanager.svg"></a>
-<a href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/stars/YubaC/filemanager.svg"></a>
-<a href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/watchers/YubaC/filemanager.svg"></a>
-
-<br>
+<a href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white"></a>
 
 <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white">
 
+<img src = "https://img.shields.io/badge/Windows_XP-003399?style=for-the-badge&logo=windows-xp&logoColor=white">
+</p>
+<p>
+<a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/forks/YubaC/filemanager.svg?style=for-the-badge"></a>
+<a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/stars/YubaC/filemanager.svg?style=for-the-badge"></a>
+<a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/watchers/YubaC/filemanager.svg?style=for-the-badge"></a>
+
+</p>
+<p>
+
+<a target="_blank" href = "https://github.com/YubaC/filemanager/releases"><img src = "https://img.shields.io/github/v/release/YubaC/filemanager?style=for-the-badge"></a> <img id = "download_times" src = "https://img.shields.io/github/downloads/YubaC/filemanager/total?style=for-the-badge"> <a href = "https://www.python.org/downloads/"><img src = "https://img.shields.io/github/pipenv/locked/python-version/YubaC/filemanager?style=for-the-badge"></a>
+
+<img src = "https://img.shields.io/badge/AUTHOR-YubaC-orange?style=for-the-badge"> <img src = "https://img.shields.io/badge/DOCUMENT%20VERSION-1.0.1-orange?style=for-the-badge">
+
+</p><p>
+
+
+
 <img src="http://ForTheBadge.com/images/badges/made-with-python.svg">
+
+<img src = "http://ForTheBadge.com/images/badges/built-with-science.svg">
 
 <br>
 
