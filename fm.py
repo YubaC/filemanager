@@ -53,6 +53,8 @@ from tkinter.messagebox import askokcancel
 
 import windnd
 
+help_url = "https://yubac.github.io/fmhelp/index.html"
+
 # 列表中存储的是元素是元组
 mode_to_select = [('添加文件', 0, '+'), ('移除文件', 1, '-')]
 
@@ -1937,7 +1939,11 @@ def run_command(command, terminal, commandinput):
             command_inputed = command_inputed.split()
 
         if command_inputed[0] == "?" or command_inputed[0] == "help":
-            help('help', terminal)
+            if len(command_inputed) > 1:
+                if command_inputed[1] == '-?':
+                    webbrowser.open(help_url, new=0, autoraise=True)
+            else:
+                help('help', terminal)
             contiune_command()
 
         elif command_inputed[0] == "init":
