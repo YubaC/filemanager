@@ -104,7 +104,7 @@ FileManager每次启动时都会启动一个update checker。
 
 <img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/init.png">
 
-可以看到，在工作路径下多处了一个括号和六位数字/字母。这是该仓库的id。
+可以看到，在工作路径下多出了一个括号和六位数字/字母。这是该仓库的id。
 **这是加载成功的标志。**
 
 <img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/branch_in_init.png">
