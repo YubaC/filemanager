@@ -1,6 +1,6 @@
 # FileManager Helper #
 
-<img src = "img\ico.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/ico.png">
 
 ## Welcome to FileManager ##
 
@@ -47,11 +47,11 @@ FileManager每次启动时都会启动一个update checker。
 
 在正确安装FileManager后，当在文件夹下右键时，弹出的右键菜单应会包含“在这里打开FileManager”的选项。
 
-<img src = "img\open_in_there.png" alt = "在这里打开FileManager.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/open_in_there.png" alt = "在这里打开FileManager.png">
 
 ### 认识FileManager界面 ###
 
-<img src = "img\fm_window.png" alt = "fm_window.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/fm_window.png" alt = "fm_window.png">
 
 ①：当前版本
 
@@ -67,29 +67,29 @@ FileManager每次启动时都会启动一个update checker。
 
 使用`cd`以更改工作目录。
 
-<img src = "img\cd_dir.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/cd_dir.png">
 
 除了使用相对路径外，`cd`命令同样也支持绝对路径。列如：
 
-<img src = "img\cd_dir2.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/cd_dir2.png">
 
-**目标路径存在空格时，请使用`cd,路径`的方式更改工作目录。**列如：
+**目标路径存在空格时，请使用**`cd,路径`**的方式更改工作目录。**列如：
 
-<img src = "img\cd_dir3.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/cd_dir3.png">
 
 **请注意！所用逗号必须为半角符号（英文符号）。**
 
 在命令行输入`init newrepo`以在工作路径处新建一个仓库。
 
-<img src = "img\init_newrepo.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/init_newrepo.png">
 
 这是新建仓库前的FMTest文件夹：
 
-<img src = "img\before_init_newrepo.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/before_init_newrepo.png">
 
 可以看到，新建仓库后，仓库所在文件夹下多出了一个隐藏的.filemanager文件夹。
 
-<img src = "img\after_init_newrepo.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/after_init_newrepo.png">
 
 ### 加载仓库 ###
 
@@ -97,16 +97,16 @@ FileManager每次启动时都会启动一个update checker。
 
 当出现这样的提示时，使用`init -update`以将仓库提升至当前版本：
 
-<img src = "img\init_error.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/init_error.png">
 
 加载成功后如下：
 
-<img src = "img\init.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/init.png">
 
 可以看到，在工作路径下多处了一个括号和六位数字/字母。这是该仓库的id。
 **这是加载成功的标志。**
 
-<img src = "img\branch_in_init.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/branch_in_init.png">
 
 红框内是该仓库的分支图。详情请参阅<a href = "#branches">分支</a>
 
@@ -125,11 +125,11 @@ FileManager每次启动时都会启动一个update checker。
 
 加载后，如果没有更改，将会提示“没有最近更改的文件”：
 
-<img src = "img\no_new.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/no_new.png">
 
 否则将会弹窗提示更改的文件。这里我们新建一个4.txt：
 
-<img src = "img\change_box.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/change_box.png">
 
 可以看到，弹出了一个名为“ChangesList”的弹窗。
 
@@ -149,9 +149,9 @@ FileManager每次启动时都会启动一个update checker。
 
 - 使用`add`命令以唤起添加/移除文件(文件夹)面板：
 	
-	<img src = "img\add.png">
+	<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/add.png">
 	
-	<img src = "img\adder.png">
+	<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/adder.png">
 	
 	将文件或文件夹拖拽到该面板上以将其暂存/取消暂存。
 - 使用`add -f +`和`add -f -`以暂存/取消暂存文件。
@@ -159,7 +159,7 @@ FileManager每次启动时都会启动一个update checker。
 
 **请注意！以上两个命令将会弹出如下图所示的一个文件选择框。**
 
-<img src = "img\file_selector.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/file_selector.png">
 
 **add后的附加参数(-f/-d/+/-)排序不分先后。因此，命令`add -f/-d +/-`和`add +/- -f/-d`是完全等效的。**
 
@@ -171,13 +171,13 @@ FileManager每次启动时都会启动一个update checker。
 
 例：提交注释为“My first commit”：
 
-<img src = "img\commit.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/commit.png">
 
 **如果所在的提交不是当前分支的最后一个提交的话，会新建一个分支。**
 
 例如：
 
-<img src = "img\branch3.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/branch3.png">
 
 表示在id=0的提交处又进行了一次提交。
 
@@ -191,7 +191,7 @@ FileManager每次启动时都会启动一个update checker。
 
 方法是：`checkout 提交id`，列如：
 
-<img src = "img\checkout.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/checkout.png">
 
 上图表示将仓库恢复至id=0的提交（新建仓库）时。
 
@@ -201,11 +201,11 @@ FileManager每次启动时都会启动一个update checker。
 
 `branch`命令可以显示当前仓库的分支图。例如：
 
-<img src = "img\branch1.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/branch1.png">
 
 又或者：
 
-<img src = "img\branch2.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/branch2.png">
 
 分支图上的每一个星号（*）表示一次提交。竖线表示分支。
 
@@ -215,7 +215,7 @@ FileManager每次启动时都会启动一个update checker。
 
 又如：
 
-<img src = "img\branch3.png">
+<img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/branch3.png">
 
 其含义为：在id=0的提交（新建仓库）出，引出一个子分支（id=2）。
 
@@ -241,5 +241,5 @@ FileManager每次启动时都会启动一个update checker。
 - 使用`set monitor on`以为当前仓库启用monitor。
 - 使用`set monitor off`以为当前仓库禁用monitor。
 
-> ** 什么时候适合启用monitor？ **<br>
+> 什么时候适合启用monitor?<br>
 > 当一个仓库内文件特别多的时候，refreash会花费很长时间，这时适合启用monitor，可以大量节省refreash的时间。如果refreash耗时很短，则不建议启用monitor。
