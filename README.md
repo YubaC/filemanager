@@ -11,9 +11,9 @@
 <img src = "https://img.shields.io/badge/Windows_XP-003399?style=for-the-badge&logo=windows-xp&logoColor=white">
 </p>
 <p>
+<a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/watchers/YubaC/filemanager.svg?style=for-the-badge"></a>
 <a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/forks/YubaC/filemanager.svg?style=for-the-badge"></a>
 <a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/stars/YubaC/filemanager.svg?style=for-the-badge"></a>
-<a target="_blank" href = "https://github.com/YubaC/filemanager"><img src = "https://img.shields.io/github/watchers/YubaC/filemanager.svg?style=for-the-badge"></a>
 
 </p>
 <p>
