@@ -73,7 +73,8 @@ FileManager每次启动时都会启动一个update checker。
 
 <img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/cd_dir2.png">
 
-**目标路径存在空格时，请使用**`cd,路径`**的方式更改工作目录。**列如：
+**目标路径存在空格时，请使用**`cd,路径`**的方式更改工作目录。**
+列如：
 
 <img src = "https://cdn.jsdelivr.net/gh/YubaC/fmhelp@latest/img/cd_dir3.png">
 
