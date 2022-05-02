@@ -1494,6 +1494,8 @@ def diff(terminal):
 #                 break
 
 #             findin -= 1
+        file_path1 = ''
+
         for i in dirs:
             file_path1 = os.path.join(
                 path_using, '.filemanager', 'commits', i, os.path.basename(file_path2))
@@ -1532,10 +1534,10 @@ def diff(terminal):
                 terminal.insert('end', '\nerror:Read ' +
                                 file_path2 + ' Error', 'red')
         else:
-            print('\nerror:这是一个二进制文件', 'red')
+            terminal.insert('end', '\nerror:这是一个二进制文件', 'red')
 
     elif inited:
-        terminal.insert('end', '\nerror:文件' + file_path1 +
+        terminal.insert('end', '\nerror:文件' + file_path2 +
                         '是这次提交新建的，无法与上一次提交对比', 'red')
     else:
         terminal.insert('end', '\nerror:文件不存在', 'red')
