@@ -24,7 +24,7 @@
 
 <p><img src="https://img.shields.io/badge/AUTHOR-YubaC-orange?style=for-the-badge&color=red"> <img src="https://img.shields.io/badge/DOCUMENT%20VERSION-1.0.1-orange?style=for-the-badge&color=blueviolet"></p><p>
 <p>
-<a href = "https://github.com/996icu/996.ICU">
+<a target="_blank" href = "https://github.com/996icu/996.ICU">
 <img src = "https://img.shields.io/static/v1?label=LICENSE&message=%22Anti%20996%22%20License%20Version%201.0&color=blue&style=for-the-badge"></a>
 </p>
 
