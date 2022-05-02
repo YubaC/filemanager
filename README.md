@@ -21,7 +21,12 @@
 <p>
 <a target="_blank" href="https://github.com/YubaC/filemanager/releases"><img src="https://img.shields.io/github/v/release/YubaC/filemanager?style=for-the-badge&color=yellowgreen"></a> <img id="download_times" src="https://img.shields.io/github/downloads/YubaC/filemanager/total?style=for-the-badge&color=yellow"> <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/github/pipenv/locked/python-version/YubaC/filemanager?style=for-the-badge&color=orange"></a>
 </p>
+
 <p><img src="https://img.shields.io/badge/AUTHOR-YubaC-orange?style=for-the-badge&color=red"> <img src="https://img.shields.io/badge/DOCUMENT%20VERSION-1.0.1-orange?style=for-the-badge&color=blueviolet"></p><p>
+<p>
+<a href = "https://github.com/996icu/996.ICU">
+<img src = "https://img.shields.io/static/v1?label=LICENSE&message=%22Anti%20996%22%20License%20Version%201.0&color=blue&style=for-the-badge"></a>
+</p>
 
 <img src="http://ForTheBadge.com/images/badges/made-with-python.svg">
 
