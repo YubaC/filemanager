@@ -43,7 +43,7 @@ import tkinter as tk
 
 from tkinter import *
 from tkinter.ttk import *
-from tkinter import filedialog, Label, Radiobutton
+from tkinter import filedialog, Label, Radiobutton, simpledialog
 
 import need.draw as draw
 
@@ -104,16 +104,17 @@ _TEXT_BOMS = (
     codecs.BOM_UTF8,
 )
 
-def hash(file_path,Bytes=1024):
-    md5_1 = hashlib.md5()                        #创建一个md5算法对象
-    with open(file_path,'rb') as f:              #打开一个文件，必须是'rb'模式打开
+
+def hash(file_path, Bytes=1024):
+    md5_1 = hashlib.md5()  # 创建一个md5算法对象
+    with open(file_path, 'rb') as f:  # 打开一个文件，必须是'rb'模式打开
         while 1:
-            data =f.read(Bytes)                  #由于是一个文件，每次只读取固定字节
-            if data:                             #当读取内容不为空时对读取内容进行update
+            data = f.read(Bytes)  # 由于是一个文件，每次只读取固定字节
+            if data:  # 当读取内容不为空时对读取内容进行update
                 md5_1.update(data)
-            else:                                #当整个文件读完之后停止update
+            else:  # 当整个文件读完之后停止update
                 break
-    ret = md5_1.hexdigest()                      #获取这个文件的MD5值
+    ret = md5_1.hexdigest()  # 获取这个文件的MD5值
     return ret
 
 
@@ -140,7 +141,7 @@ def writefilehash(path_list):
     timestamps = []
     for i in path_list:
         try:
-            file_hash = hash(os.path.join(path_using,i))
+            file_hash = hash(os.path.join(path_using, i))
             for j in range(len(timestamp)):
                 if timestamp[j][0] == i:
                     timestamp[j][2] = file_hash
@@ -153,7 +154,7 @@ def writefilehash(path_list):
     top.destroy()
     with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
         for i in timestamp:
-            p.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
+            p.write('{0},{1},{2}\n'.format(i[0], i[1], i[2]))
         p.close()
 
 
@@ -177,15 +178,15 @@ def is_binary_file(file_path):
 def update(terminal):
     global path_using
     if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
-        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'),'r',encoding='utf-8') as f:
+        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'), 'r', encoding='utf-8') as f:
             repo_version_loaded = f.read()
             repo_version = repo_version_loaded.split('.')
             f.close()
-        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'),'w',encoding='utf-8') as f:
+        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'), 'w', encoding='utf-8') as f:
             f.write(terminal_infos.version)
             f.close()
         if int(repo_version[0]) == 1 and int(repo_version[1]) == 0:
-            with open(os.path.join(path_using, '.filemanager','main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
+            with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
                 timestamp = f.read().splitlines()
                 f.close()
 
@@ -195,7 +196,7 @@ def update(terminal):
             for i in timestamp:
                 paths.append(i.split(',')[0])
 
-            with open(os.path.join(path_using, '.filemanager','main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
+            with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
                 f.write('dir,timestamp,hash\n')
                 for i in timestamp:
                     f.write('{0},-1\n'.format(i))
@@ -216,18 +217,19 @@ def init(terminal):
     global now_at
 
     if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
-        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'),'r',encoding='utf-8') as f:
+        with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'), 'r', encoding='utf-8') as f:
             repo_version_loaded = f.read()
             repo_version = repo_version_loaded.split('.')
             f.close()
         if int(repo_version[0]) == 1 and int(repo_version[1]) == 0:
             terminal.insert('end', "\nerror:init失败", 'red')
-            terminal.insert('end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
+            terminal.insert(
+                'end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
         else:
             if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
                 # 起始提交位置
                 f = open(os.path.join(path_using, '.filemanager',
-                        'main', 'branches.json'), 'r', encoding='utf-8')
+                                      'main', 'branches.json'), 'r', encoding='utf-8')
                 info_data = json.load(f)
                 f.close()
                 now_at = int(info_data['now_at'])
@@ -254,7 +256,8 @@ def init(terminal):
                         dirs[:] = []  # 忽略当前目录下的子目录
                         # os.mkdir(os.path.join(root,r'.filemnager/base'))
                     for name in files:
-                        all_size += os.path.getsize(os.path.join(root, name))/1024
+                        all_size += os.path.getsize(
+                            os.path.join(root, name))/1024
                         inited_all_number += 1
 
                 # reload(path_using)
@@ -475,7 +478,7 @@ def refreash(path_in, terminal):
         else:
             timestamp_to_change.append(i[0])
 
-    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
         lines = f.read().splitlines()
         f.close()
     timestamp_splited = []
@@ -487,16 +490,16 @@ def refreash(path_in, terminal):
                 # print(pth[0])
                 # print(path)
                 if i == timestamp_splited[path][0]:
-                    mtime = str(round(os.stat(os.path.join(path_using, timestamp_splited[path][0])).st_mtime))
+                    mtime = str(
+                        round(os.stat(os.path.join(path_using, timestamp_splited[path][0])).st_mtime))
                     timestamp_splited[path][1] = mtime
                     timestamp_to_change.remove(i)
                     break
         if timestamp_to_change == []:
             break
-    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
         for i in timestamp_splited:
-            f.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
-        
+            f.write('{0},{1},{2}\n'.format(i[0], i[1], i[2]))
 
     for i in deleted_files:
         if not i == 'dir':
@@ -650,7 +653,7 @@ def reload(path_in, terminal):
         num_new = len(changes['create'])
 
     # 更新timestamp.csv
-    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
         lines = f.read().splitlines()
         f.close()
     timestamp_splited = []
@@ -662,16 +665,17 @@ def reload(path_in, terminal):
                 # print(pth[0])
                 # print(path)
                 if i == timestamp_splited[path][0]:
-                    mtime = str(round(os.stat(os.path.join(path_using, timestamp_splited[path][0])).st_mtime))
+                    mtime = str(
+                        round(os.stat(os.path.join(path_using, timestamp_splited[path][0])).st_mtime))
                     timestamp_splited[path][1] = mtime
                     timestamp_to_change.remove(i)
                     changes['changes'].remove(i)
                     break
         if timestamp_to_change == []:
             break
-    with open(os.path.join(path_in, '.filemanager','main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), 'w', encoding='utf-8') as f:
         for i in timestamp_splited:
-            f.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
+            f.write('{0},{1},{2}\n'.format(i[0], i[1], i[2]))
 
     with open(os.path.join(path_in, '.filemanager', 'main', 'now_list_doing.csv'), 'w', encoding='utf-8') as f:
         for i in changes['changes']:
@@ -686,7 +690,8 @@ def reload(path_in, terminal):
         paths = f.read().splitlines()
         f.close()
     if not path_in in paths:
-        terminal.insert('end','\nWARNING:位于{0}的仓库并没有被monitor所监控，您的更改可能不会被察觉。请使用"refreash"命令以加载完整变更。'.format(str(path_in)),'yellow')
+        terminal.insert('end', '\nWARNING:位于{0}的仓库并没有被monitor所监控，您的更改可能不会被察觉。请使用"refreash"命令以加载完整变更。'.format(
+            str(path_in)), 'yellow')
 
 # 新建仓库的命令
 
@@ -716,7 +721,8 @@ def newrepo(path_in, terminal):
                 dirs[:] = []  # 忽略当前目录下的子目录
             # os.mkdir(os.path.join(root,r'.filemnager/base'))
             for name in files:
-                file_relpath = os.path.relpath(os.path.join(root,name), path_in)
+                file_relpath = os.path.relpath(
+                    os.path.join(root, name), path_in)
                 paths.append(file_relpath)
                 all_size += os.path.getsize(os.path.join(root, name))/1024
                 all_number += 1
@@ -1003,7 +1009,7 @@ def add(terminal, paths, command_inputed):
         terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
 
 
-def commit(terminal):
+def commit(terminal, str_timestamp_in):
     # print(changes['delete'])
     # print('True')
     global commit_text
@@ -1030,8 +1036,14 @@ def commit(terminal):
         copy_path.append(i)
 
     # 获取当前timestamp
-    timestamp = round(time.time()*100)
-    str_timestamp = str(timestamp)
+    if str_timestamp_in != '':
+        str_timestamp = str_timestamp_in
+    else:
+        timestamp = round(time.time()*100)
+        str_timestamp = str(timestamp)
+
+    # if os.path.exists(os.path.join(path_using, '.filemanager', 'commits', str_timestamp)):
+    #     shutil.rmtree(os.path.join(path_using, '.filemanager', 'commits', str_timestamp))
 
     if not os.path.exists(os.path.join(path_using, '.filemanager', 'commits', str_timestamp)):
         os.makedirs(os.path.join(
@@ -1153,6 +1165,8 @@ def commit(terminal):
         # 提交timestamp.csv
         # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'create')):
     try:
+        if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv')):
+            os.remove(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
         shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), os.path.join(
             path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
     except:
@@ -1214,24 +1228,32 @@ def commit(terminal):
             except:
                 pass
 
-    now_branch_max_commit = 0
+    if str_timestamp_in == '':
 
-    for i in range(len(branch)):
-        if now_at in list(branch[i]['include'].keys()):
-            now_at_branch = i
-            for j in list(branch[i]['include'].keys()):
-                if int(j) > now_branch_max_commit:
-                    now_branch_max_commit = int(j)
-            break
-    # new_branch = [{'start': -1, 'include':{0:"新建仓库"}, 'end': -1}]
-    if now_at == now_branch_max_commit:
-        branch[now_at_branch]['include'][branch_len+1] = commit_text
+        now_branch_max_commit = 0
+
+        for i in range(len(branch)):
+            if now_at in list(branch[i]['include'].keys()):
+                now_at_branch = i
+                for j in list(branch[i]['include'].keys()):
+                    if int(j) > now_branch_max_commit:
+                        now_branch_max_commit = int(j)
+                break
+        # new_branch = [{'start': -1, 'include':{0:"新建仓库"}, 'end': -1}]
+        if now_at == now_branch_max_commit:
+            branch[now_at_branch]['include'][branch_len+1] = commit_text
+        else:
+            new_branch = {'start': now_at, 'include': {
+                branch_len+1: commit_text}, 'end': -1}
+            branch.append(new_branch)
+        now_at = branch_len + 1
+        branch_len = 0
+
     else:
-        new_branch = {'start': now_at, 'include': {
-            branch_len+1: commit_text}, 'end': -1}
-        branch.append(new_branch)
-    now_at = branch_len + 1
-    branch_len = 0
+        for i in range(len(branch)):
+            if now_at in branch[i]['include'].keys():
+                branch[i]['include'][now_at] = commit_text
+                break
 
     write_branch(branch)
     print_branch(terminal)
@@ -1470,22 +1492,17 @@ def diff(terminal):
         branch = info_data['branches']
 
         commits_in_this_branch = []
-        for i in branch:
-            if str(now_at) in i['include'].keys():
-                for j in i['include'].keys():
-                    if not int(j) >= now_at:
-                        commits_in_this_branch.append(int(j))
-                    else:
-                        break
-                break
+
+        found = find_older_commit_in_branch(branch, now_at)
 
         # del commits_in_this_branch[len(commits_in_this_branch) - 1]
 
         dirs = []
-        for i in commits_in_this_branch:
+        for i in found[0]:
             dirs.append(str(float_dir[i]))
 
         dirs.reverse()
+        del dirs[0]
 #         while True:
 #             file_path1 = os.path.join(path_using, '.filemanager', 'commits', str(
 #                 float_dir[findin - 1]), os.path.basename(file_path2))
@@ -1557,6 +1574,35 @@ def write_branch(tree_in):
     f.close()
 
 
+def find_older_commit_in_branch(branch_in, target):
+    branch_in.reverse()
+    commit_in_branch = []
+    commit_after_that_commit = []
+    starts = []
+
+    for i in branch_in:
+        in_start = False
+        max_num = target
+        for j in i['include'].keys():
+            if int(j) in starts:
+                in_start = True
+                max_num = int(j)
+                break
+        if str(target) in i['include'].keys() or in_start:
+            if str(target) in i['include'].keys():
+                for j in i['include'].keys():
+                    if int(j) > target:
+                        commit_after_that_commit.append(int(j))
+
+            if i['start'] != '-1':
+                starts.append(int(i['start']))
+            for j in i['include'].keys():
+                if not int(j) > max_num:
+                    commit_in_branch.append(int(j))
+    commit_in_branch.sort()
+    return [commit_in_branch, commit_after_that_commit]
+
+
 def checkout(start, terminal):
     global path_using, now_at, changes
 
@@ -1566,6 +1612,23 @@ def checkout(start, terminal):
         float_dir.append(round(float(i)))
 
     float_dir.sort()
+
+    # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
+    # 起始提交位置
+    f = open(os.path.join(path_using, '.filemanager',
+                          'main', 'branches.json'), 'r', encoding='utf-8')
+    info_data = json.load(f)
+    f.close()
+
+    found = find_older_commit_in_branch(info_data["branches"], start)
+
+    before = []
+    after = []
+
+    for i in found[0]:
+        before.append(str(float_dir[i]))
+    for i in found[1]:
+        after.append((float_dir[i]))
 
     # dir_using = float_dir[0:start]
     # dir_using = []  # 实际是文件目录，不是文件夹目录
@@ -1608,7 +1671,17 @@ def checkout(start, terminal):
     # 后面更改过的文件加入删除列表
     file_changed_in_dir_to_delete = []
     for i in float_dir[start:len(float_dir)]:
+        # for i in after:
         file_changed_in_dir_to_delete.append(str(i))
+
+    # 前面别的分支改动过的文件加入删除列表
+    branch_changed_list = []
+    for i in range(start):
+        branch_changed_list.append(i)
+    branch_changed_list = list(set(branch_changed_list) - set(before))
+
+    for i in branch_changed_list:
+        file_changed_in_dir_to_delete.append(str(float_dir[i]))
 
     for i in file_changed_in_dir_to_delete:
         for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
@@ -1621,8 +1694,8 @@ def checkout(start, terminal):
     # 计算并比较有更改的文件的hash值
     remove_from_delete_list = []
     for i in list(file_hash_at_that_time.keys()):
-        if os.path.exists(os.path.join(path_using,i)):
-            if hash(os.path.join(path_using,i)) == file_hash_at_that_time[i]:
+        if os.path.exists(os.path.join(path_using, i)):
+            if hash(os.path.join(path_using, i)) == file_hash_at_that_time[i]:
                 remove_from_delete_list.append(i)
 
     file_to_delete = set(file_to_delete) - set(remove_from_delete_list)
@@ -1650,7 +1723,8 @@ def checkout(start, terminal):
     # 复制文件
 
     file_copy_dir = []
-    for i in float_dir[0:start+1]:
+    # for i in float_dir[0:start+1]:
+    for i in before:
         file_copy_dir.append(str(i))
 
     file_copy_dir.reverse()
@@ -1667,8 +1741,10 @@ def checkout(start, terminal):
                         if target_dir != '' and not os.path.exists(target_dir):
                             os.makedirs(target_dir)
                         if not os.path.exists(os.path.join(path_using, file_realtive_path)):
-                            shutil.copy(os.path.join(root, name), os.path.join(path_using, file_realtive_path))
-                            terminal.insert('end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
+                            shutil.copy(os.path.join(root, name), os.path.join(
+                                path_using, file_realtive_path))
+                            terminal.insert(
+                                'end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
                             terminal.update()
                             terminal.see('end')
                     except:
@@ -1802,18 +1878,20 @@ def checkout(start, terminal):
 
             with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
                 for i in timestamp:
-                    p.write('{0},{1},{2}\n'.format(i[0],i[1],i[2]))
+                    p.write('{0},{1},{2}\n'.format(i[0], i[1], i[2]))
 
         else:
-            csv_path = os.path.join(path_using, '.filemanager', 'main', 'commits', str(float_dir[start]),'timestamp.csv')
+            csv_path = os.path.join(path_using, '.filemanager', 'main', 'commits', str(
+                float_dir[start]), 'timestamp.csv')
             hash_path = []
             for i in hashes_old:
                 hash_path.append(i[0])
             del hash_path[0]
             writefilehash(hash_path)
             os.remove(csv_path)
-            shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), csv_path)
-        
+            shutil.copy(os.path.join(path_using, '.filemanager',
+                        'main', 'timestamp.csv'), csv_path)
+
     except:
         terminal.insert('end', '\nerror:检出timestamp失败', 'red')
 
@@ -1870,8 +1948,9 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os.path import isfile,isdir,join
 # 新建函数以便将图标载入窗口中
 
+
 def icon_for_window(tkwindow, temofilename='fm.ico'):
-    tkwindow.iconbitmap(temofilename)
+    tkwindow.iconbitmap(default=temofilename)
 
 # def icon_for_window(tkwindow, filevalue, temofilename='tempicon.ico'):
 #     try:
@@ -2044,6 +2123,7 @@ def run_command(command, terminal, commandinput):
                 print(all_text)
                 # text1 = pattern1.findall(all_text)
                 # text2 = pattern2.findall(all_text)
+                commit_text = ''
                 text1 = all_text.split("\"")
                 text2 = all_text.split("\'")
                 if len(text1) <= 1 and len(text2) <= 1:
@@ -2053,7 +2133,7 @@ def run_command(command, terminal, commandinput):
                 else:
                     commit_text = text1[1]
                 if not commit_text == '':
-                    commit(terminal)
+                    commit(terminal, '')
                 contiune_command()
             else:
                 terminal.insert('end', '\nerror:没有要提交的内容', 'red')
@@ -2156,6 +2236,54 @@ def run_command(command, terminal, commandinput):
             else:
                 terminal.insert('end', '\nerror:无效的参数', 'red')
             contiune_command()
+
+        elif command_inputed[0] == 'recommit':
+            if '-?' in command_inputed:
+                help('recommit', terminal)
+                contiune_command()
+            # terminal.insert('end', command)
+            elif not process_path == {'changes': [], 'delete': [], 'create': []}:
+                entry_str = simpledialog.askstring(title='确认', prompt='To verify, type RECOMMIT below: ')
+                # pattern1 = re.compile(r"'(\w+)'")
+                # pattern2 = re.compile(r'"(\w+)"')
+                if entry_str == 'recommit' or entry_str == 'RECOMMIT':
+                    all_text = ''
+                    for i in command_inputed:
+                        all_text += i + ' '
+                    print(all_text)
+                    # text1 = pattern1.findall(all_text)
+                    # text2 = pattern2.findall(all_text)
+                    commit_text = ''
+                    text1 = all_text.split("\"")
+                    text2 = all_text.split("\'")
+                    if len(text1) <= 1 and len(text2) <= 1:
+                        terminal.insert('end', "\nerror:没有提交说明", 'red')
+                    elif len(text1) <= 1:
+                        commit_text = text2[1]
+                    else:
+                        commit_text = text1[1]
+                    if not commit_text == '':
+                        dirs = os.listdir(os.path.join(path_using, '.filemanager', 'commits'))
+                        float_dir = []
+                        for i in dirs:
+                            float_dir.append(round(float(i)))
+
+                        float_dir.sort()
+                        for i in process_path['changes']:
+                            try:
+                                os.remove(os.path.join(path_using, '.filemanager', 'commits', str(float_dir[now_at]),i))
+                            except:
+                                pass
+                        for i in process_path['delete']:
+                            try:
+                                os.remove(os.path.join(path_using, '.filemanager', 'commits', str(float_dir[now_at]),i))
+                            except:
+                                pass
+                        commit(terminal, str(float_dir[now_at]))
+                contiune_command()
+            else:
+                terminal.insert('end', '\nerror:没有要提交的内容', 'red')
+                contiune_command()
 
         else:
             # terminal.insert('end', command)
