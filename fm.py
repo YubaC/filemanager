@@ -10,7 +10,7 @@ import os
 import csv
 # from re import I
 # import sys
-# import re
+import re
 import time
 import hashlib
 # from tkinter import font
@@ -406,7 +406,7 @@ def createtimestamp(path1, filename):
 
 
 def refreash(path_in, terminal):
-    global inited_all_number
+    global inited_all_number, adder_opened
     global changes
     walk_loaded = {}
     csv_read = {}
@@ -506,6 +506,61 @@ def refreash(path_in, terminal):
             delete.append(i)
     for i in new_files:
         create.append(i)
+
+    # 忽略
+    if os.path.exists(os.path.join(path_using, '.ignore')):
+        with open(os.path.join(path_using, '.ignore'), 'r', encoding='utf-8-sig') as f:
+            text = f.read().splitlines()
+            f.close()
+        patterns = []
+        for s in text:
+            # ^ $ .  +  -  = !     ( ) [ ] { }
+            s = s.replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('.', '\.').replace('+', '\+').replace('-', '\-').replace(
+                '=', '\=').replace('!', '\!').replace(' ', '\s').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]').replace('{', '\{').replace('}', '\}')
+            if len(s) != 0 and s[0] != '#':
+                if s[len(s)-1] == '\\':
+                    temp = list(s)
+                    del temp[len(temp)-1]
+                    temp.append('\\\\.*')
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+
+                if s[0] == '\\':
+                    temp = list(s)
+                    temp[0] = '.*\\\\'
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+                    del temp[0]
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+
+        remove_list = []
+        for e in change:
+            for pattern in patterns:
+                if pattern.match(e):
+                    remove_list.append(e)
+                    break
+
+        change = list(set(change) - set(remove_list))
+
+        for e in delete:
+            for pattern in patterns:
+                if pattern.match(e):
+                    remove_list.append(e)
+                    break
+
+        delete = list(set(delete) - set(remove_list))
+
+        for e in create:
+            for pattern in patterns:
+                if pattern.match(e):
+                    remove_list.append(e)
+                    break
+
+        create = list(set(create) - set(remove_list))
 
     changes['changes'] = change
     changes['delete'] = delete
@@ -651,6 +706,62 @@ def reload(path_in, terminal):
             if not os.path.exists(os.path.join(path_in, i)):
                 changes['create'].remove(i)
         num_new = len(changes['create'])
+
+# 忽略
+    if os.path.exists(os.path.join(path_using, '.ignore')):
+        with open(os.path.join(path_using, '.ignore'), 'r', encoding='utf-8-sig') as f:
+            text = f.read().splitlines()
+            f.close()
+        patterns = []
+        for s in text:
+            # ^ $ .  +  -  = !     ( ) [ ] { }
+            s = s.replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('.', '\.').replace('+', '\+').replace('-', '\-').replace(
+                '=', '\=').replace('!', '\!').replace(' ', '\s').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]').replace('{', '\{').replace('}', '\}')
+            if len(s) != 0 and s[0] != '#':
+                if s[len(s)-1] == '\\':
+                    temp = list(s)
+                    del temp[len(temp)-1]
+                    temp.append('\\\\.*')
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+
+                if s[0] == '\\':
+                    temp = list(s)
+                    temp[0] = '.*\\\\'
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+                    del temp[0]
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+
+            remove_list = []
+            for e in changes['changes']:
+                for pattern in patterns:
+                    if pattern.match(e):
+                        remove_list.append(e)
+                        break
+
+            changes['changes'] = list(
+                set(changes['changes']) - set(remove_list))
+
+            for e in changes['delete']:
+                for pattern in patterns:
+                    if pattern.match(e):
+                        remove_list.append(e)
+                        break
+
+            changes['delete'] = list(set(changes['delete']) - set(remove_list))
+
+            for e in changes['create']:
+                for pattern in patterns:
+                    if pattern.match(e):
+                        remove_list.append(e)
+                        break
+
+            changes['create'] = list(set(changes['create']) - set(remove_list))
 
     # 更新timestamp.csv
     with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
@@ -886,7 +997,7 @@ def adder(terminal, command):
         adder_opened = False
         top.destroy()
 
-    if command == '!destory':
+    if command == '!destroy':
         if adder_opened:
             exitbutton()
 
@@ -1166,7 +1277,8 @@ def commit(terminal, str_timestamp_in):
         # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'create')):
     try:
         if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv')):
-            os.remove(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
+            os.remove(os.path.join(path_using, '.filemanager', 'main',
+                      'commits', str_timestamp, 'timestamp.csv'))
         shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), os.path.join(
             path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
     except:
@@ -1432,6 +1544,10 @@ def printchanges(process_path_in, terminal, mode):
 
     if out == [] and mode != '!destroy' and changes == {'changes': [], 'delete': [], 'create': []}:
         terminal.insert('end', '\n没有最近更改的文件')
+        if adder_opened:
+            adder(terminal, '!destroy')
+        if window_opened:
+            show_changes_in_box(out, terminal, '!destroy')
         # terminal.delete('0.0','end')
         # terminal.insert('end', '\n没有文件\n')
 
@@ -1985,7 +2101,6 @@ def run_command(command, terminal, commandinput):
     errortext = f'错误指令"{command.strip()}"。'
 
     command = str(command)  # 这玩意是应付编辑器不知道command是什么类型的
-    terminal_infos.input_list.append(command)  # 增加输入了什么命令
     command_chosen = len(terminal_infos.input_list)
     terminal.config(state='n')  # 解锁terminal(Text)
 
@@ -1996,6 +2111,7 @@ def run_command(command, terminal, commandinput):
         terminal.insert('end', command)  # 就复述输入内容
 
     else:
+        terminal_infos.input_list.append(command)  # 增加输入了什么命令
         terminal.insert('end', command)
         if inited:
             info_add = '('+id_read[0:6]+'...)'
@@ -2243,7 +2359,8 @@ def run_command(command, terminal, commandinput):
                 contiune_command()
             # terminal.insert('end', command)
             elif not process_path == {'changes': [], 'delete': [], 'create': []}:
-                entry_str = simpledialog.askstring(title='确认', prompt='To verify, type RECOMMIT below: ')
+                entry_str = simpledialog.askstring(
+                    title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
                 # pattern1 = re.compile(r"'(\w+)'")
                 # pattern2 = re.compile(r'"(\w+)"')
                 if entry_str == 'recommit' or entry_str == 'RECOMMIT':
@@ -2263,7 +2380,8 @@ def run_command(command, terminal, commandinput):
                     else:
                         commit_text = text1[1]
                     if not commit_text == '':
-                        dirs = os.listdir(os.path.join(path_using, '.filemanager', 'commits'))
+                        dirs = os.listdir(os.path.join(
+                            path_using, '.filemanager', 'commits'))
                         float_dir = []
                         for i in dirs:
                             float_dir.append(round(float(i)))
@@ -2271,12 +2389,14 @@ def run_command(command, terminal, commandinput):
                         float_dir.sort()
                         for i in process_path['changes']:
                             try:
-                                os.remove(os.path.join(path_using, '.filemanager', 'commits', str(float_dir[now_at]),i))
+                                os.remove(os.path.join(
+                                    path_using, '.filemanager', 'commits', str(float_dir[now_at]), i))
                             except:
                                 pass
                         for i in process_path['delete']:
                             try:
-                                os.remove(os.path.join(path_using, '.filemanager', 'commits', str(float_dir[now_at]),i))
+                                os.remove(os.path.join(
+                                    path_using, '.filemanager', 'commits', str(float_dir[now_at]), i))
                             except:
                                 pass
                         commit(terminal, str(float_dir[now_at]))
