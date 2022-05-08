@@ -726,7 +726,7 @@ def reload(path_in, terminal):
         patterns = []
         for s in text:
             # ^ $ .  +  -  = !     ( ) [ ] { }
-            s = s.replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('.', '\.').replace('+', '\+').replace('-', '\-').replace(
+            s = s.replace('.', '\.').replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('+', '\+').replace('-', '\-').replace(
                 '=', '\=').replace('!', '\!').replace(' ', '\s').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]').replace('{', '\{').replace('}', '\}')
             if len(s) != 0 and s[0] != '#':
                 if s[0] == '\\':
@@ -746,6 +746,10 @@ def reload(path_in, terminal):
                     del temp[len(temp)-1]
                     temp.append('\\\\.*')
                     s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+                
+                else:
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
 
@@ -1069,24 +1073,28 @@ def add(terminal, paths, command_inputed):
                 file_path = filedialog.askopenfilenames(initialdir=path_using)
             if '+' in command_inputed:
                 for i in file_path:
-                    sourname = os.path.relpath(i, path_using)
-                    if sourname in changes['changes'] and sourname not in process_path['changes']:
-                        process_path['changes'].append(sourname)
-                    if sourname in changes['delete'] and sourname not in process_path['delete']:
-                        process_path['delete'].append(sourname)
-                    if sourname in changes['create'] and sourname not in process_path['create']:
-                        process_path['create'].append(sourname)
-
+                    try:
+                        sourname = os.path.relpath(i, path_using)
+                        if sourname in changes['changes'] and sourname not in process_path['changes']:
+                            process_path['changes'].append(sourname)
+                        if sourname in changes['delete'] and sourname not in process_path['delete']:
+                            process_path['delete'].append(sourname)
+                        if sourname in changes['create'] and sourname not in process_path['create']:
+                            process_path['create'].append(sourname)
+                    except:
+                        pass
             elif '-' in command_inputed:
                 for i in file_path:
-                    sourname = os.path.relpath(i, path_using)
-                    if sourname in process_path['changes']:
-                        process_path['changes'].remove(sourname)
-                    if sourname in process_path['delete']:
-                        process_path['delete'].remove(sourname)
-                    if sourname in process_path['create']:
-                        process_path['create'].remove(sourname)
-
+                    try:
+                        sourname = os.path.relpath(i, path_using)
+                        if sourname in process_path['changes']:
+                            process_path['changes'].remove(sourname)
+                        if sourname in process_path['delete']:
+                            process_path['delete'].remove(sourname)
+                        if sourname in process_path['create']:
+                            process_path['create'].remove(sourname)
+                    except:
+                        pass
         elif '-d' in command_inputed:
             if paths != []:
                 folder_path = paths
@@ -2347,7 +2355,7 @@ def run_command(command, terminal, commandinput):
                     if command_inputed[1] == '.ignore':
                         if not os.path.exists(os.path.join(path_using,'.ignore')):
                             with open(os.path.join(path_using,'.ignore'),'w',encoding='utf-8') as f:
-                                f.write('# Write down the path you want to ignore below')
+                                f.write('# Please write down the path you want to ignore below：')
                                 f.close()
                             terminal.insert('end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
                         else:
