@@ -65,7 +65,11 @@ exit_flag = False
 now_path = ''
 
 home = os.path.expanduser('~')
-start_path = os.path.join(home, r'AppData\Local\Programs\FileManager\fm')
+if not os.path.exists('USBDisk'):
+    start_path = os.path.join(home, r'AppData\Local\Programs\FileManager\fm')
+else:
+    start_path = os.getcwd()
+
 if start_path != os.getcwd():
     path_using = now_path = os.getcwd()
     os.chdir(start_path)
@@ -515,20 +519,13 @@ def refreash(path_in, terminal):
         patterns = []
         for s in text:
             # ^ $ .  +  -  = !     ( ) [ ] { }
-            s = s.replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('.', '\.').replace('+', '\+').replace('-', '\-').replace(
+            s = s.replace('.', '\.').replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('+', '\+').replace('-', '\-').replace(
                 '=', '\=').replace('!', '\!').replace(' ', '\s').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]').replace('{', '\{').replace('}', '\}')
             if len(s) != 0 and s[0] != '#':
-                if s[len(s)-1] == '\\':
-                    temp = list(s)
-                    del temp[len(temp)-1]
-                    temp.append('\\\\.*')
-                    s = ''.join(temp)
-                    pattern = re.compile(f"{s}$")
-                    patterns.append(pattern)
-
                 if s[0] == '\\':
                     temp = list(s)
                     temp[0] = '.*\\\\'
+                    temp.append('\\.*')
                     s = ''.join(temp)
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
@@ -536,6 +533,20 @@ def refreash(path_in, terminal):
                     s = ''.join(temp)
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
+
+                elif s[len(s)-1] == '\\':
+                    temp = list(s)
+                    del temp[len(temp)-1]
+                    temp.append('\\\\.*')
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+                
+                else:
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+
+
 
         remove_list = []
         for e in change:
@@ -707,7 +718,7 @@ def reload(path_in, terminal):
                 changes['create'].remove(i)
         num_new = len(changes['create'])
 
-# 忽略
+    # 忽略
     if os.path.exists(os.path.join(path_using, '.ignore')):
         with open(os.path.join(path_using, '.ignore'), 'r', encoding='utf-8-sig') as f:
             text = f.read().splitlines()
@@ -718,21 +729,22 @@ def reload(path_in, terminal):
             s = s.replace('?', '.').replace('*', '.*').replace('^', '\^').replace('$', '\$').replace('.', '\.').replace('+', '\+').replace('-', '\-').replace(
                 '=', '\=').replace('!', '\!').replace(' ', '\s').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]').replace('{', '\{').replace('}', '\}')
             if len(s) != 0 and s[0] != '#':
-                if s[len(s)-1] == '\\':
-                    temp = list(s)
-                    del temp[len(temp)-1]
-                    temp.append('\\\\.*')
-                    s = ''.join(temp)
-                    pattern = re.compile(f"{s}$")
-                    patterns.append(pattern)
-
                 if s[0] == '\\':
                     temp = list(s)
                     temp[0] = '.*\\\\'
+                    temp.append('\\.*')
                     s = ''.join(temp)
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
                     del temp[0]
+                    s = ''.join(temp)
+                    pattern = re.compile(f"{s}$")
+                    patterns.append(pattern)
+
+                elif s[len(s)-1] == '\\':
+                    temp = list(s)
+                    del temp[len(temp)-1]
+                    temp.append('\\\\.*')
                     s = ''.join(temp)
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
@@ -2330,27 +2342,38 @@ def run_command(command, terminal, commandinput):
         elif command_inputed[0] == 'set':
             if '-?' in command_inputed:
                 help('set', terminal)
-            elif len(command_inputed) > 2:
-                if command_inputed[1] == 'monitor':
-                    if command_inputed[2] == 'on':
-                        if inited:
+            elif inited:
+                if len(command_inputed) == 2:
+                    if command_inputed[1] == '.ignore':
+                        if not os.path.exists(os.path.join(path_using,'.ignore')):
+                            with open(os.path.join(path_using,'.ignore'),'w',encoding='utf-8') as f:
+                                f.write('# Write down the path you want to ignore below')
+                                f.close()
+                            terminal.insert('end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
+                        else:
+                            terminal.insert('end', '\nerror:.ignore文件已存在', 'red')
+                    else:
+                        terminal.insert('end', '\nerror:无效的参数', 'red')
+                elif len(command_inputed) > 2:
+                    if command_inputed[1] == 'monitor':
+                        if command_inputed[2] == 'on':
                             add_to_monitor()
                             terminal.insert(
                                 'end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
+
+                        elif command_inputed[2] == 'off':
+                                delete_from_monitor()
+                                terminal.insert(
+                                    'end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
                         else:
-                            terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
-                    elif command_inputed[2] == 'off':
-                        if inited:
-                            delete_from_monitor()
-                            terminal.insert(
-                                'end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
-                        else:
-                            terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                            terminal.insert('end', '\nerror:无效的参数', 'red')
                     else:
                         terminal.insert('end', '\nerror:无效的参数', 'red')
+                else:
+                    terminal.insert('end', '\nerror:无效的参数', 'red')
 
             else:
-                terminal.insert('end', '\nerror:无效的参数', 'red')
+                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
             contiune_command()
 
         elif command_inputed[0] == 'recommit':
