@@ -1148,6 +1148,7 @@ def commit(terminal, str_timestamp_in):
     global path_using
     global now_at
     global changes
+    global adder_opened
     commit_size = 0
     commit_files_number = 0
     changes_path = []
@@ -1391,7 +1392,8 @@ def commit(terminal, str_timestamp_in):
     print_branch(terminal)
     printchanges(changes, terminal, '!destroy')
     if changes == {'changes': [], 'delete': [], 'create': []}:
-        adder(terminal, '!destory')
+        if adder_opened:
+            adder(terminal, '!destroy')
     else:
         printchanges(changes, terminal, 'changes')
 
