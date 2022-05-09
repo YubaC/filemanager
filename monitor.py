@@ -1,6 +1,6 @@
 from watchdog.observers import Observer
 from watchdog.events import *
-import time
+import time,sys
 import os
 
 with open(f'{os.getcwd()}\path.txt', "r", encoding='utf-8') as p:
@@ -104,9 +104,13 @@ class FileEventHandler(FileSystemEventHandler):
 if __name__ == "__main__":
     observer = Observer()
     event_handler = FileEventHandler()
+    monitor_path = []
     for i in path:
         if os.path.exists(os.path.join(i,'.filemanager','main','now_list_doing.csv')):
+            monitor_path.append(i)
             observer.schedule(event_handler, i, True)
+    if monitor_path == []:
+        sys.exit(0)
     observer.start()
     try:
         while True:
