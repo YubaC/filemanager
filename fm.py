@@ -225,11 +225,34 @@ def init(terminal):
             repo_version_loaded = f.read()
             repo_version = repo_version_loaded.split('.')
             f.close()
+
+        undone_commit_dirs = []
+
+        try:
+            already_commited_dirs = os.listdir(os.path.join(
+                path_using, '.filemanager', 'main', 'commits'))
+            loaded_dirs = os.listdir(os.path.join(
+                path_using, '.filemanager', 'commits'))
+
+            undone_commit_dirs = list(
+                set(loaded_dirs)-set(already_commited_dirs))
+        except:
+            pass
+
         if int(repo_version[0]) == 1 and int(repo_version[1]) == 0:
             terminal.insert('end', "\nerror:init失败", 'red')
             terminal.insert(
                 'end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
+
         else:
+            if undone_commit_dirs != []:
+                terminal.insert('end', "\nDeleting abnormal commits......")
+                terminal.update()
+                for i in undone_commit_dirs:
+                    shutil.rmtree(os.path.join(
+                        path_using, '.filemanager', 'commits',i))
+                terminal.insert('end', "Done.")
+                terminal.update()
             if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
                 # 起始提交位置
                 f = open(os.path.join(path_using, '.filemanager',
@@ -279,30 +302,30 @@ def init(terminal):
 
 def add_to_monitor():
     global path_using
-    with open(os.path.join(start_path,'path.txt'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(start_path, 'path.txt'), 'r', encoding='utf-8') as f:
         paths = f.read().splitlines()
         f.close()
     if not path_using in paths:
         paths.append(path_using)
-        with open(os.path.join(start_path,'path.txt'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(start_path, 'path.txt'), 'w', encoding='utf-8') as f:
             for i in paths:
                 f.write(i + '\n')
             f.close()
-        os.system(os.path.join(start_path,'restartmonitor.bat'))
+        os.system(os.path.join(start_path, 'restartmonitor.bat'))
 
 
 def delete_from_monitor():
     global path_using
-    with open(os.path.join(start_path,'path.txt'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(start_path, 'path.txt'), 'r', encoding='utf-8') as f:
         paths = f.read().splitlines()
         f.close()
     if path_using in paths:
         paths.remove(path_using)
-        with open(os.path.join(start_path,'path.txt'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(start_path, 'path.txt'), 'w', encoding='utf-8') as f:
             for i in paths:
                 f.write(i + '\n')
             f.close()
-        os.system(os.path.join(start_path,'restartmonitor.bat'))
+        os.system(os.path.join(start_path, 'restartmonitor.bat'))
 # 复制文件
 # def copy(path1, path2):
 #     global exit_flag
@@ -541,12 +564,10 @@ def refreash(path_in, terminal):
                     s = ''.join(temp)
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
-                
+
                 else:
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
-
-
 
         remove_list = []
         for e in change:
@@ -748,7 +769,7 @@ def reload(path_in, terminal):
                     s = ''.join(temp)
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
-                
+
                 else:
                     pattern = re.compile(f"{s}$")
                     patterns.append(pattern)
@@ -894,7 +915,7 @@ def newrepo(path_in, terminal):
             f.write('del /S /Q hide.bat')
             f.close()
         os.chdir(path_using)
-        os.system(os.path.join(start_path,'hide.bat'))
+        os.system(f'{os.getcwd()}\\hide.bat')
         os.chdir(start_path)
 
         all_size = 0
@@ -935,7 +956,7 @@ def newrepo(path_in, terminal):
         new_branch = [{'start': -1, 'include': {0: "新建仓库"}, 'end': -1}]
         write_branch(new_branch)
 
-        terminal.insert('end', 'Done\n')
+        terminal.insert('end', 'Done.')
 
         # 提交timestamp
         try:
@@ -2067,7 +2088,7 @@ class tk:
 
 
 class terminal_infos:
-    with open(os.path.join(start_path,'version.txt'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(start_path, 'version.txt'), 'r', encoding='utf-8') as f:
         version = f.read()
         f.close()
     # version = '1.0.1'  # 版本
@@ -2357,13 +2378,16 @@ def run_command(command, terminal, commandinput):
             elif inited:
                 if len(command_inputed) == 2:
                     if command_inputed[1] == '.ignore':
-                        if not os.path.exists(os.path.join(path_using,'.ignore')):
-                            with open(os.path.join(path_using,'.ignore'),'w',encoding='utf-8') as f:
-                                f.write('# Please write down the path you want to ignore below：')
+                        if not os.path.exists(os.path.join(path_using, '.ignore')):
+                            with open(os.path.join(path_using, '.ignore'), 'w', encoding='utf-8') as f:
+                                f.write(
+                                    '# Please write down the path you want to ignore below：')
                                 f.close()
-                            terminal.insert('end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
+                            terminal.insert(
+                                'end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
                         else:
-                            terminal.insert('end', '\nerror:.ignore文件已存在', 'red')
+                            terminal.insert(
+                                'end', '\nerror:.ignore文件已存在', 'red')
                     else:
                         terminal.insert('end', '\nerror:无效的参数', 'red')
                 elif len(command_inputed) > 2:
@@ -2374,9 +2398,9 @@ def run_command(command, terminal, commandinput):
                                 'end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
 
                         elif command_inputed[2] == 'off':
-                                delete_from_monitor()
-                                terminal.insert(
-                                    'end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
+                            delete_from_monitor()
+                            terminal.insert(
+                                'end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
                         else:
                             terminal.insert('end', '\nerror:无效的参数', 'red')
                     else:
