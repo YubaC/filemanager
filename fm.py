@@ -761,7 +761,7 @@ def reload(path_in, terminal):
     while num_new != num_old:
         num_old = num_new
         for i in changes['create']:  # 有BUG????
-            if not os.path.exists(os.path.join(path_in, i)):
+            if not os.path.exists(os.path.join(path_in, i)) or i in changes['delete'] or i in keys:
                 changes['create'].remove(i)
         num_new = len(changes['create'])
 
@@ -2169,286 +2169,142 @@ def run_command(command, terminal, commandinput):
         # win_width = terminal.winfo_reqwidth()
         # win_height = terminal.winfo_reqheight()
         # # print(win_width,win_height)
-    errortext = f'错误指令"{command.strip()}"。'
+    try:
+        errortext = f'错误指令"{command.strip()}"。'
 
-    command = str(command)  # 这玩意是应付编辑器不知道command是什么类型的
-    command_chosen = len(terminal_infos.input_list)
-    terminal.config(state='n')  # 解锁terminal(Text)
+        command = str(command)  # 这玩意是应付编辑器不知道command是什么类型的
+        command_chosen = len(terminal_infos.input_list)
+        terminal.config(state='n')  # 解锁terminal(Text)
 
-    terminal.delete('end')  # 删除输入控件
-    commandinput.delete(0, 'end')  # 删除控件里输入的文本
+        terminal.delete('end')  # 删除输入控件
+        commandinput.delete(0, 'end')  # 删除控件里输入的文本
 
-    if command.strip() == '':  # 如果啥也没输入
-        terminal.insert('end', command)  # 就复述输入内容
+        if command.strip() == '':  # 如果啥也没输入
+            terminal.insert('end', command)  # 就复述输入内容
 
-    else:
-        terminal_infos.input_list.append(command)  # 增加输入了什么命令
-        terminal.insert('end', command)
-        if inited:
-            info_add = '('+id_read[0:6]+'...)'
         else:
-            info_add = ''
-        if now_path == '':
-            path_using = start_path
-        else:
-            path_using = now_path
-        # console.# print("FM "+path_using+">",end='', style='underline')
-        # command_inputed = input().split()
-        # command_inputed = input("FM " + path_using + info_add + ">")
-        command_inputed = command
-
-        # pattern1 = re.compile(r'"(\w+)"')
-        # pattern2 = re.compile(r"'(\w+)'")
-        # pth1=pattern1.findall(command_inputed)
-        # pth2=pattern2.findall(command_inputed)
-        if ',' in command_inputed:
-            command_inputed = command_inputed.split(',')
-        else:
-            command_inputed = command_inputed.split()
-
-        if command_inputed[0] == "?" or command_inputed[0] == "help":
-            if len(command_inputed) > 1:
-                if command_inputed[1] == '-?':
-                    webbrowser.open(help_url, new=0, autoraise=True)
+            terminal_infos.input_list.append(command)  # 增加输入了什么命令
+            terminal.insert('end', command)
+            if inited:
+                info_add = '('+id_read[0:6]+'...)'
             else:
-                help('help', terminal)
-            contiune_command()
-
-        elif command_inputed[0] == "init":
-            if len(command_inputed) == 1:
-                # terminal.insert('end', command)
-                # terminal.update()
-                init(terminal)
-                # terminal.insert('end','Done')
-            elif '-?' in command_inputed:
-                help('init', terminal)
-            elif command_inputed[1] == 'newrepo':
-                # terminal.insert('end', command)
-                newrepo(path_using, terminal)
-            elif '-exit' in command_inputed:
-                # terminal.insert('end', command)
-                inited = False
-            elif '-update' in command_inputed:
-                update(terminal)
-                init(terminal)
-            elif '-m' in command_inputed:
-                init(terminal)
-                terminal.insert(
-                    'end', '\nWARNING:命令"init -m"在fillemanager 1.1.0版本被弃用。使用命令"set monitor on"以替代。', 'yellow')
-                # if inited:
-                #     add_to_monitor()
-                #     terminal.insert('end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
-            elif '-rm' in command_inputed:
-                init(terminal)
-                terminal.insert(
-                    'end', '\nWARNING:命令"init -rm"在fillemanager 1.1.0版本被弃用。使用命令"set monitor off"以替代。', 'yellow')
-                # if inited:
-                #     delete_from_monitor()
-                #     terminal.insert('end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
-            # terminal.insert('end',command)
-            contiune_command()
-
-        elif command_inputed[0] == 'cd':
-            if len(command_inputed) == 1:
-                # terminal.insert('end', command)
-                # contiune_command()
-                terminal.insert('end', '\nerror:移动工作目录失败。\n', 'red')
-                # # print('\nerror:没有输入路径', 'red')
-            elif '-?' in command_inputed:
-                help('cd', terminal)
+                info_add = ''
+            if now_path == '':
+                path_using = start_path
             else:
-                # terminal.insert('end', command)
-                try:
-                    os.chdir(path_using)
-                    os.chdir(command_inputed[1])
-                    path_using = now_path = os.getcwd()
-                    os.chdir(start_path)
-                    inited = False
-                    info_add = ''
-                    changes = {'changes': [], 'delete': [], 'create': []}
-                    process_path = {'changes': [], 'delete': [], 'create': []}
+                path_using = now_path
+            # console.# print("FM "+path_using+">",end='', style='underline')
+            # command_inputed = input().split()
+            # command_inputed = input("FM " + path_using + info_add + ">")
+            command_inputed = command
 
-                except OSError as error:
-                    terminal.insert('end', '\n'+error.args[1]+'\n', 'red')
-                except:
-                    terminal.insert('end', '\nerror:移动工作目录失败。\n', 'red')
-
-            contiune_command()
-
-        elif command_inputed[0] == 'refreash':
-            if '-?' in command_inputed:
-                help('refreash', terminal)
-                contiune_command()
-            elif inited:
-                terminal.insert('end', '\nRefreashing......')
-                terminal.update()
-                refreash(path_using, terminal)
-                contiune_command()
+            # pattern1 = re.compile(r'"(\w+)"')
+            # pattern2 = re.compile(r"'(\w+)'")
+            # pth1=pattern1.findall(command_inputed)
+            # pth2=pattern2.findall(command_inputed)
+            if ',' in command_inputed:
+                command_inputed = command_inputed.split(',')
             else:
-                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
-                contiune_command()
+                command_inputed = command_inputed.split()
 
-        elif command_inputed[0] == 'add':
-            if '-?' in command_inputed:
-                help('add', terminal)
-            # terminal.insert('end', command)
-            else:
-                add(terminal, [], command_inputed)
-            contiune_command()
-
-        elif command_inputed[0] == 'commit':
-            if '-?' in command_inputed:
-                help('commit', terminal)
-                contiune_command()
-            # terminal.insert('end', command)
-            elif not process_path == {'changes': [], 'delete': [], 'create': []}:
-                # pattern1 = re.compile(r"'(\w+)'")
-                # pattern2 = re.compile(r'"(\w+)"')
-                all_text = ''
-                for i in command_inputed:
-                    all_text += i + ' '
-                # print(all_text)
-                # text1 = pattern1.findall(all_text)
-                # text2 = pattern2.findall(all_text)
-                commit_text = ''
-                text1 = all_text.split("\"")
-                text2 = all_text.split("\'")
-                if len(text1) <= 1 and len(text2) <= 1:
-                    terminal.insert('end', "\nerror:没有提交说明", 'red')
-                elif len(text1) <= 1:
-                    commit_text = text2[1]
-                else:
-                    commit_text = text1[1]
-                if not commit_text == '':
-                    commit(terminal, '')
-                contiune_command()
-            else:
-                terminal.insert('end', '\nerror:没有要提交的内容', 'red')
-                contiune_command()
-
-        elif command_inputed[0] == 'diff':
-            if '-?' in command_inputed:
-                help('diff', terminal)
-                contiune_command()
-            else:
-                # terminal.insert('end', command)
-                diff(terminal)
-                contiune_command()
-
-        elif command_inputed[0] == 'branch':
-            if '-?' in command_inputed:
-                help('branch', terminal)
-            elif inited:
-                # terminal.insert('end', command)
-                if '-s' in command_inputed or len(command_inputed) == 1 or '-m' in command_inputed:
-                    if '-g' in command_inputed or '-m' in command_inputed or len(command_inputed) == 1:
-                        if '-m' in command_inputed:
-                            now_at = int(
-                                command_inputed[command_inputed.index('-m') + 1])
-                        print_branch(terminal)
-            else:
-                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
-
-            contiune_command()
-
-        elif command_inputed[0] == 'checkout':
-            if '-?' in command_inputed:
-                help('checkout', terminal)
-            elif inited:
+            if command_inputed[0] == "?" or command_inputed[0] == "help":
                 if len(command_inputed) > 1:
-                    try:
-                        now_at = int(command_inputed[1])
-                    except:
-                        pass
-                # terminal.insert('end', command)
-                # if len(command_inputed) == 1:
-                checkout(now_at, terminal)
-                # else:
-                # checkout(now_at,command_inputed[1],terminal)
-            else:
-                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
-            contiune_command()
-
-        elif command_inputed[0] == 'reload':
-            if '-?' in command_inputed:
-                help('init', terminal)
-            elif inited:
-                # terminal.insert('end', command)
-                reload(path_using, terminal)
-                printchanges(changes, terminal, 'changes')
-            else:
-                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
-            contiune_command()
-
-        elif command_inputed[0] == 'show':
-            if '-?' in command_inputed:
-                help('show', terminal)
-            elif len(command_inputed) > 1:
-                if command_inputed[1] == 'monitor':
-                    with open(os.path.join(start_path, 'path.txt'), 'r', encoding='utf-8') as f:
-                        monitored = f.read().splitlines()
-                        f.close()
-                    terminal.insert('end', '\n受monitor监控的目录列表:')
-                    if monitored == []:
-                        terminal.insert('end', '\n无')
-                    else:
-                        for i in monitored:
-                            terminal.insert('end', '\n' + i)
-            else:
-                terminal.insert('end', '\nerror:无效的参数', 'red')
-            contiune_command()
-
-        elif command_inputed[0] == 'set':
-            if '-?' in command_inputed:
-                help('set', terminal)
-            elif inited:
-                if len(command_inputed) == 2:
-                    if command_inputed[1] == '.ignore':
-                        if not os.path.exists(os.path.join(path_using, '.ignore')):
-                            with open(os.path.join(path_using, '.ignore'), 'w', encoding='utf-8') as f:
-                                f.write(
-                                    '# Please write down the path you want to ignore below：')
-                                f.close()
-                            terminal.insert(
-                                'end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
-                        else:
-                            terminal.insert(
-                                'end', '\nerror:.ignore文件已存在', 'red')
-                    else:
-                        terminal.insert('end', '\nerror:无效的参数', 'red')
-                elif len(command_inputed) > 2:
-                    if command_inputed[1] == 'monitor':
-                        if command_inputed[2] == 'on':
-                            add_to_monitor()
-                            terminal.insert(
-                                'end', '\n仓库"{0}"已被添加至监控目录'.format(path_using))
-
-                        elif command_inputed[2] == 'off':
-                            delete_from_monitor()
-                            terminal.insert(
-                                'end', '\n仓库"{0}"已被从监控目录中移除'.format(path_using))
-                        else:
-                            terminal.insert('end', '\nerror:无效的参数', 'red')
-                    else:
-                        terminal.insert('end', '\nerror:无效的参数', 'red')
+                    if command_inputed[1] == '-?':
+                        webbrowser.open(help_url, new=0, autoraise=True)
                 else:
-                    terminal.insert('end', '\nerror:无效的参数', 'red')
-
-            else:
-                terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
-            contiune_command()
-
-        elif command_inputed[0] == 'recommit':
-            if '-?' in command_inputed:
-                help('recommit', terminal)
+                    help('help', terminal)
                 contiune_command()
-            # terminal.insert('end', command)
-            elif not process_path == {'changes': [], 'delete': [], 'create': []}:
-                entry_str = simpledialog.askstring(
-                    title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
-                # pattern1 = re.compile(r"'(\w+)'")
-                # pattern2 = re.compile(r'"(\w+)"')
-                if entry_str == 'recommit' or entry_str == 'RECOMMIT':
+
+            elif command_inputed[0] == "init":
+                if len(command_inputed) == 1:
+                    # terminal.insert('end', command)
+                    # terminal.update()
+                    init(terminal)
+                    # terminal.insert('end','Done')
+                elif '-?' in command_inputed:
+                    help('init', terminal)
+                elif command_inputed[1] == 'newrepo':
+                    # terminal.insert('end', command)
+                    newrepo(path_using, terminal)
+                elif '-exit' in command_inputed:
+                    # terminal.insert('end', command)
+                    inited = False
+                elif '-update' in command_inputed:
+                    update(terminal)
+                    init(terminal)
+                elif '-m' in command_inputed:
+                    init(terminal)
+                    terminal.insert(
+                        'end', '\nWARNING:命令"init -m"在fillemanager 1.1.0版本被弃用。使用命令"set monitor on"以替代。', 'yellow')
+                    # if inited:
+                    #     add_to_monitor()
+                    #     terminal.insert('end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
+                elif '-rm' in command_inputed:
+                    init(terminal)
+                    terminal.insert(
+                        'end', '\nWARNING:命令"init -rm"在fillemanager 1.1.0版本被弃用。使用命令"set monitor off"以替代。', 'yellow')
+                    # if inited:
+                    #     delete_from_monitor()
+                    #     terminal.insert('end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
+                # terminal.insert('end',command)
+                contiune_command()
+
+            elif command_inputed[0] == 'cd':
+                if len(command_inputed) == 1:
+                    # terminal.insert('end', command)
+                    # contiune_command()
+                    terminal.insert('end', '\nerror:移动工作目录失败。\n', 'red')
+                    # # print('\nerror:没有输入路径', 'red')
+                elif '-?' in command_inputed:
+                    help('cd', terminal)
+                else:
+                    # terminal.insert('end', command)
+                    try:
+                        os.chdir(path_using)
+                        os.chdir(command_inputed[1])
+                        path_using = now_path = os.getcwd()
+                        os.chdir(start_path)
+                        inited = False
+                        info_add = ''
+                        changes = {'changes': [], 'delete': [], 'create': []}
+                        process_path = {'changes': [], 'delete': [], 'create': []}
+
+                    except OSError as error:
+                        terminal.insert('end', '\n'+error.args[1]+'\n', 'red')
+                    except:
+                        terminal.insert('end', '\nerror:移动工作目录失败。\n', 'red')
+
+                contiune_command()
+
+            elif command_inputed[0] == 'refreash':
+                if '-?' in command_inputed:
+                    help('refreash', terminal)
+                    contiune_command()
+                elif inited:
+                    terminal.insert('end', '\nRefreashing......')
+                    terminal.update()
+                    refreash(path_using, terminal)
+                    contiune_command()
+                else:
+                    terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                    contiune_command()
+
+            elif command_inputed[0] == 'add':
+                if '-?' in command_inputed:
+                    help('add', terminal)
+                # terminal.insert('end', command)
+                else:
+                    add(terminal, [], command_inputed)
+                contiune_command()
+
+            elif command_inputed[0] == 'commit':
+                if '-?' in command_inputed:
+                    help('commit', terminal)
+                    contiune_command()
+                # terminal.insert('end', command)
+                elif not process_path == {'changes': [], 'delete': [], 'create': []}:
+                    # pattern1 = re.compile(r"'(\w+)'")
+                    # pattern2 = re.compile(r'"(\w+)"')
                     all_text = ''
                     for i in command_inputed:
                         all_text += i + ' '
@@ -2465,38 +2321,187 @@ def run_command(command, terminal, commandinput):
                     else:
                         commit_text = text1[1]
                     if not commit_text == '':
-                        dirs = os.listdir(os.path.join(
-                            path_using, '.filemanager', 'commits'))
-                        float_dir = []
-                        for i in dirs:
-                            float_dir.append(round(float(i)))
+                        commit(terminal, '')
+                    contiune_command()
+                else:
+                    terminal.insert('end', '\nerror:没有要提交的内容', 'red')
+                    contiune_command()
 
-                        float_dir.sort()
-                        for i in process_path['changes']:
-                            try:
-                                os.remove(os.path.join(
-                                    path_using, '.filemanager', 'commits', str(float_dir[now_at]), i))
-                            except:
-                                pass
-                        for i in process_path['delete']:
-                            try:
-                                os.remove(os.path.join(
-                                    path_using, '.filemanager', 'commits', str(float_dir[now_at]), i))
-                            except:
-                                pass
-                        commit(terminal, str(float_dir[now_at]))
+            elif command_inputed[0] == 'diff':
+                if '-?' in command_inputed:
+                    help('diff', terminal)
+                    contiune_command()
+                else:
+                    # terminal.insert('end', command)
+                    diff(terminal)
+                    contiune_command()
+
+            elif command_inputed[0] == 'branch':
+                if '-?' in command_inputed:
+                    help('branch', terminal)
+                elif inited:
+                    # terminal.insert('end', command)
+                    if '-s' in command_inputed or len(command_inputed) == 1 or '-m' in command_inputed:
+                        if '-g' in command_inputed or '-m' in command_inputed or len(command_inputed) == 1:
+                            if '-m' in command_inputed:
+                                now_at = int(
+                                    command_inputed[command_inputed.index('-m') + 1])
+                            print_branch(terminal)
+                else:
+                    terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+
                 contiune_command()
+
+            elif command_inputed[0] == 'checkout':
+                if '-?' in command_inputed:
+                    help('checkout', terminal)
+                elif inited:
+                    if len(command_inputed) > 1:
+                        try:
+                            now_at = int(command_inputed[1])
+                        except:
+                            pass
+                    # terminal.insert('end', command)
+                    # if len(command_inputed) == 1:
+                    checkout(now_at, terminal)
+                    # else:
+                    # checkout(now_at,command_inputed[1],terminal)
+                else:
+                    terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                contiune_command()
+
+            elif command_inputed[0] == 'reload':
+                if '-?' in command_inputed:
+                    help('init', terminal)
+                elif inited:
+                    # terminal.insert('end', command)
+                    reload(path_using, terminal)
+                    printchanges(changes, terminal, 'changes')
+                else:
+                    terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                contiune_command()
+
+            elif command_inputed[0] == 'show':
+                if '-?' in command_inputed:
+                    help('show', terminal)
+                elif len(command_inputed) > 1:
+                    if command_inputed[1] == 'monitor':
+                        with open(os.path.join(start_path, 'path.txt'), 'r', encoding='utf-8') as f:
+                            monitored = f.read().splitlines()
+                            f.close()
+                        terminal.insert('end', '\n受monitor监控的目录列表:')
+                        if monitored == []:
+                            terminal.insert('end', '\n无')
+                        else:
+                            for i in monitored:
+                                terminal.insert('end', '\n' + i)
+                else:
+                    terminal.insert('end', '\nerror:无效的参数', 'red')
+                contiune_command()
+
+            elif command_inputed[0] == 'set':
+                if '-?' in command_inputed:
+                    help('set', terminal)
+                elif inited:
+                    if len(command_inputed) == 2:
+                        if command_inputed[1] == '.ignore':
+                            if not os.path.exists(os.path.join(path_using, '.ignore')):
+                                with open(os.path.join(path_using, '.ignore'), 'w', encoding='utf-8') as f:
+                                    f.write(
+                                        '# Please write down the path you want to ignore below：')
+                                    f.close()
+                                terminal.insert(
+                                    'end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
+                            else:
+                                terminal.insert(
+                                    'end', '\nerror:.ignore文件已存在', 'red')
+                        else:
+                            terminal.insert('end', '\nerror:无效的参数', 'red')
+                    elif len(command_inputed) > 2:
+                        if command_inputed[1] == 'monitor':
+                            if command_inputed[2] == 'on':
+                                add_to_monitor()
+                                terminal.insert(
+                                    'end', '\n仓库"{0}"已被添加至监控目录'.format(path_using))
+
+                            elif command_inputed[2] == 'off':
+                                delete_from_monitor()
+                                terminal.insert(
+                                    'end', '\n仓库"{0}"已被从监控目录中移除'.format(path_using))
+                            else:
+                                terminal.insert('end', '\nerror:无效的参数', 'red')
+                        else:
+                            terminal.insert('end', '\nerror:无效的参数', 'red')
+                    else:
+                        terminal.insert('end', '\nerror:无效的参数', 'red')
+
+                else:
+                    terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+                contiune_command()
+
+            elif command_inputed[0] == 'recommit':
+                if '-?' in command_inputed:
+                    help('recommit', terminal)
+                    contiune_command()
+                # terminal.insert('end', command)
+                elif not process_path == {'changes': [], 'delete': [], 'create': []}:
+                    entry_str = simpledialog.askstring(
+                        title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
+                    # pattern1 = re.compile(r"'(\w+)'")
+                    # pattern2 = re.compile(r'"(\w+)"')
+                    if entry_str == 'recommit' or entry_str == 'RECOMMIT':
+                        all_text = ''
+                        for i in command_inputed:
+                            all_text += i + ' '
+                        # print(all_text)
+                        # text1 = pattern1.findall(all_text)
+                        # text2 = pattern2.findall(all_text)
+                        commit_text = ''
+                        text1 = all_text.split("\"")
+                        text2 = all_text.split("\'")
+                        if len(text1) <= 1 and len(text2) <= 1:
+                            terminal.insert('end', "\nerror:没有提交说明", 'red')
+                        elif len(text1) <= 1:
+                            commit_text = text2[1]
+                        else:
+                            commit_text = text1[1]
+                        if not commit_text == '':
+                            dirs = os.listdir(os.path.join(
+                                path_using, '.filemanager', 'commits'))
+                            float_dir = []
+                            for i in dirs:
+                                float_dir.append(round(float(i)))
+
+                            float_dir.sort()
+                            for i in process_path['changes']:
+                                try:
+                                    os.remove(os.path.join(
+                                        path_using, '.filemanager', 'commits', str(float_dir[now_at]), i))
+                                except:
+                                    pass
+                            for i in process_path['delete']:
+                                try:
+                                    os.remove(os.path.join(
+                                        path_using, '.filemanager', 'commits', str(float_dir[now_at]), i))
+                                except:
+                                    pass
+                            commit(terminal, str(float_dir[now_at]))
+                    contiune_command()
+                else:
+                    terminal.insert('end', '\nerror:没有要提交的内容', 'red')
+                    contiune_command()
+
             else:
-                terminal.insert('end', '\nerror:没有要提交的内容', 'red')
+                # terminal.insert('end', command)
+                terminal.insert('end', '\nerror:未知的命令', 'red')
                 contiune_command()
 
-        else:
-            # terminal.insert('end', command)
-            terminal.insert('end', '\nerror:未知的命令', 'red')
-            contiune_command()
+    except Exception as e:
+        terminal.insert('end',e,'red')
+        contiune_command()
 
-        terminal.config(state='d')
-        terminal.see('end')
+    terminal.config(state='d')
+    terminal.see('end')
 
 
 def print_branch(terminal):
