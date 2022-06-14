@@ -2,6 +2,7 @@
 # from concurrent.futures import thread
 # from __future__ import print_function
 import codecs
+from ctypes import WinError
 # from genericpath import isdir
 # from glob import glob
 # import encodings
@@ -245,26 +246,42 @@ def init(terminal):
                 'end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
 
         else:
+            
             if undone_commit_dirs != []:
+                unremoved_dirs = []
                 terminal.insert('end', "\nDeleting abnormal commits......")
                 terminal.update()
                 for i in undone_commit_dirs:
-                    shutil.rmtree(os.path.join(
-                        path_using, '.filemanager', 'commits',i))
+                    try:
+                        shutil.rmtree(os.path.join(
+                            path_using, '.filemanager', 'commits', i))
+                    except:
+                        unremoved_dirs.append(os.path.join(
+                            path_using, '.filemanager', 'commits', i))
+                if unremoved_dirs != []:
+                    with open(os.path.join(path_using, 'deleter.bat'), 'w', encoding='utf-8') as f:
+                        for i in unremoved_dirs:
+                            f.write('rmdir /S /Q ' + i + '\\\n')
+                        f.write('del /F /S /Q restartfm.bat\nexit')
+                        f.close()
+                    os.chdir(path_using)
+                    os.system('deleter.bat')
+                    os.chdir(start_path)
                 terminal.insert('end', "Done.")
                 terminal.update()
+
             if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
                 # 起始提交位置
                 f = open(os.path.join(path_using, '.filemanager',
-                                      'main', 'branches.json'), 'r', encoding='utf-8')
+                                        'main', 'branches.json'), 'r', encoding='utf-8')
                 info_data = json.load(f)
                 f.close()
                 now_at = int(info_data['now_at'])
 
-            # else:
-            #     terminal.insert('end',"error:这不是一个filemanager仓库")
-            # branch = []
-            # now_at = len(os.listdir(os.path.join(path_using,'.filemanager','commits'))) - 1
+        # else:
+        #     terminal.insert('end',"error:这不是一个filemanager仓库")
+        # branch = []
+        # now_at = len(os.listdir(os.path.join(path_using,'.filemanager','commits'))) - 1
 
             if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'id.txt')):
 
@@ -296,6 +313,15 @@ def init(terminal):
                 # printchanges(changes, terminal)
 
                 print_branch(terminal)
+        
+            # if askokcancel('ERROR', 'ERROR:FileManager没有足够的权限来执行命令。您希望以管理员权限重新启动FileManager吗？'):
+            #     with open(os.path.join(path_using, 'restartfm.bat'), 'w', encoding='utf-8') as f:
+            #         f.write('@echo off\n%1 mshta vbscript:CreateObject("Shell.Application").ShellExecute("cmd.exe","/c %~s0 ::","","runas",1)(window.close)&&exit\ntaskkill /f /pid fm.exe\n')
+            #         f.write(path_using[0:2]+'\n')
+            #         f.write('cd ' + path_using)
+            #         f.write('\nstart %USERPROFILE%\AppData\Local\Programs\FileManager\\fm\\fm.exe\ndel /F /S /Q restartfm.bat\nexit')
+            #         f.close()
+            #     os.system(os.path.join(path_using, 'restartfm.bat'))
     else:
         terminal.insert('end', "\nerror:这不是一个filemanager仓库", 'red')
 
@@ -2395,12 +2421,12 @@ def run_command(command, terminal, commandinput):
                         if command_inputed[2] == 'on':
                             add_to_monitor()
                             terminal.insert(
-                                'end', '\n仓库"{0}"已被添加至监控目录\n'.format(path_using))
+                                'end', '\n仓库"{0}"已被添加至监控目录'.format(path_using))
 
                         elif command_inputed[2] == 'off':
                             delete_from_monitor()
                             terminal.insert(
-                                'end', '\n仓库"{0}"已被从监控目录中移除\n'.format(path_using))
+                                'end', '\n仓库"{0}"已被从监控目录中移除'.format(path_using))
                         else:
                             terminal.insert('end', '\nerror:无效的参数', 'red')
                     else:
