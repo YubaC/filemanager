@@ -80,11 +80,15 @@ else:
     path_using = start_path
 
 # 引入一堆库
+
+
 class tk:
     from tkinter import Tk, Entry, Toplevel, Listbox, Scrollbar
     from tkinter.scrolledtext import ScrolledText
 
 # 设置信息，可选
+
+
 class terminal_infos:
     with open(os.path.join(start_path, 'version.txt'), 'r', encoding='utf-8') as f:
         version = f.read()
@@ -106,15 +110,16 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os import getcwd,chdir,startfile,popen
     # from os.path import isfile,isdir,join
 
+
 class FileManager(object):
-    def __init__(self,terminal):
+    def __init__(self, terminal):
         self.terminal = terminal
 
         self.start_path = ""
         self.path_using = ""
 
         # 仓库id
-        self.id_read=""
+        self.id_read = ""
 
         # 帮助界面链接
         self.help_url = "https://yubac.github.io/fmhelp/index.html"
@@ -187,19 +192,27 @@ class FileManager(object):
     def writefilehash(self, path_list):
         path_using = self.path_using
 
+        terminal = self.terminal
+        terminal.insert('end', f'\nCalculating hash value......(0 of {len(path_list)})')
+        terminal.update()
+        terminal.see('end')
         # 进度条窗口
-        top = Toplevel()
-        top.title('Hashing......')
-        self.icon_for_window(top)
-        pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
-        pb.pack(padx=10, pady=20)
-        pb["maximum"] = len(path_list)
-        pb["value"] = 0
+        # top = Toplevel()
+        # top.title('Hashing......')
+        # self.icon_for_window(top)
+        # pb = Progressbar(top, length=200, mode="determinate",
+        #                  orient=HORIZONTAL)
+        # pb.pack(padx=10, pady=20)
+
+        # pb["maximum"] = len(path_list)
+        # pb["value"] = 0
         # pb["value"] += 1000
-        top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
-        top.update()
+        # top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
+        # top.update()
 
         # 读取timestamp
+        done = 0
+
         with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "r", encoding='utf-8') as p:
             timestamps = p.read().splitlines()
             p.close()
@@ -209,22 +222,27 @@ class FileManager(object):
         timestamps = []
         for i in path_list:
             try:
-                file_hash = hash(os.path.join(path_using, i))
+                file_hash = self.hash(os.path.join(path_using, i))
                 for j in range(len(timestamp)):
                     if timestamp[j][0] == i:
                         timestamp[j][2] = file_hash
-                        pb["value"] += 1
-                        top.update()
+                        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                        terminal.insert('end', f'\nCalculating hash value......({done} of {len(path_list)})')
+                        terminal.update()
+                        done += 1
                         break
                 # timestamp[timestamp.index(i)][2] = file_hash
             except:
                 pass
-        top.destroy()
+        # top.destroy()
+        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.insert('end', f'\nCalculating hash value......({len(path_list)} of {len(path_list)})')
+        terminal.insert('end', '\nDone.\n')
+        terminal.update()
         with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
             for i in timestamp:
                 p.write('{0},{1},{2}\n'.format(i[0], i[1], i[2]))
             p.close()
-
 
     def callback(self):
         pass  # 这个函数不做任何事，实际上让关闭按钮失效
@@ -286,7 +304,7 @@ class FileManager(object):
         path_using = self.path_using
         # global self.now_at
 
-    # 判断是否是一个仓库（检测version.txt）
+        # 判断是否是一个仓库（检测version.txt）
         if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
             with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'), 'r', encoding='utf-8') as f:
                 repo_version_loaded = f.read()
@@ -339,7 +357,7 @@ class FileManager(object):
                 if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
                     # 起始提交位置
                     f = open(os.path.join(path_using, '.filemanager',
-                                        'main', 'branches.json'), 'r', encoding='utf-8')
+                                          'main', 'branches.json'), 'r', encoding='utf-8')
                     info_data = json.load(f)
                     f.close()
                     self.now_at = int(info_data['self.now_at'])
@@ -431,12 +449,10 @@ class FileManager(object):
     #         # print('\nerror:无法复制文件。请手动删除当前文件夹下的.filemanager文件夹重试，或关机重启后重试。')
     #     exit_flag = True
 
-
     def create_id(self):
         m = hashlib.md5()
         m.update(bytes(str(time.perf_counter()), encoding='utf-8'))
         return m.hexdigest()
-
 
     def copy(self, path1, path2):
         # global progress
@@ -444,18 +460,15 @@ class FileManager(object):
         # global all_size
         # print(path1)
         # with Progress() as progress:
-        top = Toplevel()
-        top.title('Copying......')
-        self.icon_for_window(top)
+        total_size = self.convertSize(self.all_size)
+        terminal = self.terminal
 
-        pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
-        pb.pack(padx=10, pady=20)
-        pb["maximum"] = self.all_size
-        pb["value"] = 0
-        # pb["value"] += 1000
-        top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
-        top.update()
+        terminal.insert('end', f'\nCopying {self.all_number} files, total size {total_size}......\n')
+        terminal.update()
+        terminal.see('end')
 
+        done = 0
+        done_size = 0
         for root, dirs, files in os.walk(path1):
             if os.path.basename(root) == ".filemanager":
                 dirs[:] = []  # 忽略当前目录下的子目录
@@ -470,16 +483,23 @@ class FileManager(object):
                 shutil.copy(sourname, targetname)
                 # open(targetname,'wb').write(open(sourname,'rb').read())
 
-                pb["value"] += thisadd
-                top.update()
-        top.destroy()
+                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                terminal.insert('end', f'\nCopying files......({done} of {self.all_number} files, {self.convertSize(done_size)} of {total_size} in total)')
+                terminal.update()
+                done += 1
+                done_size += thisadd
 
+        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.insert('end', f'\nCopying files......({self.all_number} of {self.all_number} files, {total_size} of {total_size} in total)')
+        terminal.insert('end', '\nDone.')
+        terminal.update()
+        terminal.see('end')
         self.exit_flag = True
 
 # 创建timestamp.csv
 
-
     def createtimestamp(self, path1, filename):
+        terminal = self.terminal
         # global progress
         # global all_number
         # time.sleep(0.1)  # 等创建文件目录
@@ -492,17 +512,23 @@ class FileManager(object):
             p.close()
         # with Progress() as progress:
 
-        top = Toplevel()
-        top.title('Timestamping......')
-        self.icon_for_window(top)
-        pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
-        pb.pack(padx=10, pady=20)
-        pb["maximum"] = self.all_number
-        pb["value"] = 0
-        # pb["value"] += 1000
-        top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
-        top.update()
+        # top = Toplevel()
+        # top.title('Timestamping......')
+        terminal.insert('end', f'\nCalculating timestamp value......(0 of {self.all_number})')
+        terminal.update()
+        terminal.see('end')
+
+        # self.icon_for_window(top)
+        # pb = Progressbar(top, length=200, mode="determinate",
+        #                  orient=HORIZONTAL)
+        # pb.pack(padx=10, pady=20)
+        # pb["maximum"] = self.all_number
+        # pb["value"] = 0
+        # # pb["value"] += 1000
+        # top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
+        # top.update()
         # print(2)
+        done = 0
         with open(os.path.join(path1, '.filemanager', 'main', filename), "a", encoding='utf-8') as p:
             for root, dirs, files in os.walk(path1):
                 if os.path.basename(root) == ".filemanager":
@@ -510,10 +536,15 @@ class FileManager(object):
                 for name in files:
                     p.write(os.path.relpath(os.path.join(root, name), path1) +
                             ','+str(round(os.stat(root + '/' + name).st_mtime))+',-1\n')
-                    pb["value"] += 1
-                    top.update()
+                    terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                    terminal.insert('end', f'\nCalculating timestamp value......({done} of {self.all_number})')
+                    terminal.update()
+                    done += 1
             p.close()
-        top.destroy()
+        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.insert('end', f'\nCalculating timestamp value......({self.all_number} of {self.all_number})')
+        terminal.insert('end', '\nDone.')
+        terminal.update()
 
 # 等待动画
 # def wait():
@@ -530,8 +561,8 @@ class FileManager(object):
     # 刷新
     def refresh(self):
         path_in = self.path_using
-        terminal=self.terminal
-        inited_all_number = self.inited_all_number
+        terminal = self.terminal
+        # inited_all_number = self.inited_all_number
         # self.adder_opened = self.adder_opened
         # global inited_all_number, self.adder_opened
         walk_loaded = {}
@@ -545,35 +576,59 @@ class FileManager(object):
 
         self.process_path = {'changes': [], 'delete': [], 'create': []}
 
-        terminal.insert('end', '\nRefreshing......')
+        terminal.insert('end', '\nChecking Files number......')
+        terminal.see('end')
+        terminal.update()
+
+        self.inited_all_number = 0
+        for root, dirs, files in os.walk(path_in):
+            if os.path.basename(root) == ".filemanager":
+                dirs[:] = []  # 忽略当前目录下的子目录
+                # os.mkdir(os.path.join(root,r'.filemnager/base'))
+            for name in files:
+                self.all_size += os.path.getsize(
+                    os.path.join(root, name))/1024
+                self.inited_all_number += 1
+        
+        terminal.insert('end', 'Done.\n')
         terminal.update()
 
         # 读取保存的时间戳
         f = csv.reader(open(os.path.join(path_in, '.filemanager',
-                    'main', 'timestamp.csv'), 'r', encoding='utf-8'))
+                                         'main', 'timestamp.csv'), 'r', encoding='utf-8'))
         for i in f:
             csv_read[i[0]] = i[1]
             csv_read_hash[i[0]] = i[2]
 
-        top = Toplevel()
-        top.title('Refreashing......')
-        self.icon_for_window(top)
+            # terminal.config(state='d')
 
-        pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
-        pb.pack(padx=10, pady=20)
-        pb["maximum"] = inited_all_number
-        pb["value"] = 0
-        # pb["value"] += 1000
-        top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
-        top.update()
+            # terminal.insert('end', '\nWaiting......Done.')
+        # top = Toplevel()
+        # top.title('Refreashing......')
+        # self.icon_for_window(top)
+
+        # pb = Progressbar(top, length=200, mode="determinate",
+        #                  orient=HORIZONTAL)
+        # pb.pack(padx=10, pady=20)
+        # pb["maximum"] = inited_all_number
+        # pb["value"] = 0
+        # # pb["value"] += 1000
+        # top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
+        # top.update()
 
         passed_files = 0
         for root, dirs, files in os.walk(path_in):
             if os.path.basename(root) == ".filemanager":
                 dirs[:] = []  # 忽略当前目录下的子目录
             for name in files:
-                pb["value"] = passed_files      # 每次更新1
-                top.update()
+                # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                terminal.see('end')
+                # terminal.update()
+                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                terminal.insert('end', f'\nChecking files......({passed_files}/{self.inited_all_number})')
+                terminal.update()
+                # pb["value"] = passed_files      # 每次更新1
+                # top.update()
                 mtime = round(os.stat(os.path.join(root, name)).st_mtime)
                 dir_path = os.path.relpath(os.path.join(root, name), path_in)
                 walk_loaded[dir_path] = str(mtime)
@@ -584,13 +639,18 @@ class FileManager(object):
                 # # print(passed_files)
                 # terminal.insert('end','\n'+str(mtime))
             # progress.update(task3, advance=inited_all_number)
-        top.destroy()
+        # top.destroy()
+        # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.insert('end', f'\nChecking files......({self.inited_all_number}/{self.inited_all_number})\n')
+        terminal.update()
+        # terminal.see('end')
 
         # 比较不同
         diff = walk_loaded.keys() & csv_read
         # 路径一样，时间戳不一样→更改的文件
         diff_vals = [(k, walk_loaded[k], csv_read[k])
-                    for k in diff if walk_loaded[k] != csv_read[k]]
+                     for k in diff if walk_loaded[k] != csv_read[k]]
 
         # 存在于存储得时间戳路径，现在不存在了→删除的文件
         deleted_files = csv_read.keys() - walk_loaded.keys()
@@ -604,7 +664,7 @@ class FileManager(object):
         timestamp_to_change = []
         # 把文件写入数组
         for i in diff_vals:
-            i_hash = hash(os.path.join(path_in, i[0]))
+            i_hash = self.hash(os.path.join(path_in, i[0]))
             if not i_hash == csv_read_hash[i[0]]:
                 change.append(i[0])
             else:
@@ -755,7 +815,8 @@ class FileManager(object):
                     terminal.delete(terminal.index(
                         'end-1c').split('.')[0]+'.0', 'end')
             if exit_flag:
-                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                terminal.delete(terminal.index(
+                    'end-1c').split('.')[0]+'.0', 'end')
                 terminal.insert('end', '\nWaiting......Done.')
                 break
                 # time.sleep(1)
@@ -806,7 +867,7 @@ class FileManager(object):
                         self.changes['changes'].append(line[1])
 
         f = csv.reader(open(os.path.join(path_in, '.filemanager',
-                    'main', 'timestamp.csv'), 'r', encoding='utf-8'))
+                                         'main', 'timestamp.csv'), 'r', encoding='utf-8'))
         for i in f:
             csv_read[i[0]] = i[1]
             csv_read_hash[i[0]] = i[2]
@@ -819,7 +880,7 @@ class FileManager(object):
         while num_new != num_old:
             num_old = num_new
             for i in self.changes['changes']:
-                i_hash = hash(os.path.join(path_in, i))
+                i_hash = self.hash(os.path.join(path_in, i))
                 if i in keys and i_hash != csv_read_hash[i]:
                     mtime = round(os.stat(os.path.join(path_in, i)).st_mtime)
                     if str(mtime) != csv_read[i]:
@@ -900,7 +961,8 @@ class FileManager(object):
                             remove_list.append(e)
                             break
 
-                self.changes['delete'] = list(set(self.changes['delete']) - set(remove_list))
+                self.changes['delete'] = list(
+                    set(self.changes['delete']) - set(remove_list))
 
                 for e in self.changes['create']:
                     for pattern in patterns:
@@ -908,7 +970,8 @@ class FileManager(object):
                             remove_list.append(e)
                             break
 
-                self.changes['create'] = list(set(self.changes['create']) - set(remove_list))
+                self.changes['create'] = list(
+                    set(self.changes['create']) - set(remove_list))
 
         # 更新timestamp.csv
         with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), 'r', encoding='utf-8') as f:
@@ -951,8 +1014,8 @@ class FileManager(object):
             terminal.insert('end', '\nWARNING:位于{0}的仓库并没有被monitor所监控，您的更改可能不会被察觉。请使用"refresh"命令以加载完整变更。'.format(
                 str(path_in)), 'yellow')
 
-
     # 新建仓库的命令
+
     def newrepo(self, path_in):
         terminal = self.terminal
         # global info_add
@@ -985,14 +1048,17 @@ class FileManager(object):
                     file_relpath = os.path.relpath(
                         os.path.join(root, name), path_in)
                     paths.append(file_relpath)
-                    all_size += os.path.getsize(os.path.join(root, name))/1024
+                    all_size += os.path.getsize(os.path.join(root, name))
                     all_number += 1
 
             timestamp = round(time.time()*100)
             str_timestamp = str(timestamp)
+            self.all_size = all_size
+            self.all_number = all_number
         # os.startfile("G:\TEST0\GIT\\filemanager\copier\copier.exe")
             # c1 = threading.Thread(target=copy,args=(path_in, os.path.join(path_in,r'.filemanager\base')))
-            self.copy(path_in, os.path.join(path_in, r'.filemanager\commits', str_timestamp))
+            self.copy(path_in, os.path.join(
+                path_in, r'.filemanager\commits', str_timestamp))
             self.createtimestamp(path_in, 'timestamp.csv')
             with open(os.path.join(path_in, '.filemanager', 'main', 'timestamp.csv'), "r", encoding='utf-8') as p:
                 loaded_timestamp = p.read().splitlines()
@@ -1069,7 +1135,7 @@ class FileManager(object):
             new_branch = [{'start': -1, 'include': {0: "新建仓库"}, 'end': -1}]
             self.write_branch(new_branch)
 
-            terminal.insert('end', 'Done.')
+            # terminal.insert('end', 'Done.')
 
             # 提交timestamp
             try:
@@ -1086,7 +1152,6 @@ class FileManager(object):
             with open(os.path.join(path_in, '.filemanager', 'main', 'version.txt'), "w", encoding='utf-8') as f:
                 f.write(terminal_infos.version)
                 f.close()
-
 
     # 暂存/取消暂存的窗口
     # def adder(self, command):
@@ -1180,14 +1245,14 @@ class FileManager(object):
 
     # 暂存
 
-
     def add(self, paths, command_inputed):
         terminal = self.terminal
         path_using = self.path_using
 
         if self.inited:
             if len(command_inputed) == 1:
-                self.adder('add')
+                # self.adder('add')
+                self.printchanges()
 
             elif command_inputed[1] == '.':
                 for i in self.changes['changes']:
@@ -1208,7 +1273,8 @@ class FileManager(object):
                 if paths != []:
                     file_path = paths
                 else:
-                    file_path = filedialog.askopenfilenames(initialdir=path_using)
+                    file_path = filedialog.askopenfilenames(
+                        initialdir=path_using)
                 if '+' in command_inputed:
                     for i in file_path:
                         try:
@@ -1250,11 +1316,14 @@ class FileManager(object):
                                 sourname = os.path.relpath(
                                     os.path.join(root, name), path_using)
                                 if sourname in self.changes['changes'] and sourname not in self.process_path['changes']:
-                                    self.process_path['changes'].append(sourname)
+                                    self.process_path['changes'].append(
+                                        sourname)
                                 if sourname in self.changes['delete'] and sourname not in self.process_path['delete']:
-                                    self.process_path['delete'].append(sourname)
+                                    self.process_path['delete'].append(
+                                        sourname)
                                 if sourname in self.changes['create'] and sourname not in self.process_path['create']:
-                                    self.process_path['create'].append(sourname)
+                                    self.process_path['create'].append(
+                                        sourname)
 
                 elif '-' in command_inputed:
                     for i in folder_path:
@@ -1266,17 +1335,35 @@ class FileManager(object):
                                 sourname = os.path.relpath(
                                     os.path.join(root, name), path_using)
                                 if sourname in self.process_path['changes']:
-                                    self.process_path['changes'].remove(sourname)
+                                    self.process_path['changes'].remove(
+                                        sourname)
                                 if sourname in self.process_path['delete']:
-                                    self.process_path['delete'].remove(sourname)
+                                    self.process_path['delete'].remove(
+                                        sourname)
                                 if sourname in self.process_path['create']:
-                                    self.process_path['create'].remove(sourname)
+                                    self.process_path['create'].remove(
+                                        sourname)
 
             self.printchanges()
             # self.printchanges(self.process_path, terminal, 'changes')
 
         else:
             terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+
+    # Byte换KB、MB、GB
+    def convertSize(self,size):
+        # Byte直接返回
+        if size < 1024:
+            return str(size) + "B"
+        # KB取整后返回
+        elif size < 1024 * 1024:
+            return str(int(size / 1024)) + "KB"
+        # MB保留一位小数
+        elif size < 1024 * 1024 * 1024:
+            return str(round(size / (1024 * 1024), 1)) + "MB"
+        # GB保留两位小数
+        else:
+            return str(round(size / (1024 * 1024 * 1024), 2)) + "GB"
 
     # 提交
     def commit(self, commit_text, str_timestamp_in):
@@ -1286,22 +1373,26 @@ class FileManager(object):
         # global commit_text
         path_using = self.path_using
         # global self.now_at
-        
+
         commit_size = 0
         commit_files_number = 0
         changes_path = []
         delete_path = []
         copy_path = []
 
+        terminal.insert('end', '\nChecking Files......')
+        terminal.see('end')
+        terminal.update()
+
         # 计算提交的文件的大小
         for i in self.process_path['changes']:
-            commit_size += os.path.getsize(os.path.join(path_using, i))/1024
+            commit_size += os.path.getsize(os.path.join(path_using, i))
             commit_files_number += 1
             copy_path.append(i)
         # for i in self.process_path['delete']:
         #     commit_size += os.path.getsize(os.path.join(path_using, i))/1024
         for i in self.process_path['create']:
-            commit_size += os.path.getsize(os.path.join(path_using, i))/1024
+            commit_size += os.path.getsize(os.path.join(path_using, i))
             commit_files_number += 1
             copy_path.append(i)
 
@@ -1319,19 +1410,18 @@ class FileManager(object):
             os.makedirs(os.path.join(
                 path_using, '.filemanager', 'commits', str_timestamp))
 
-        # 复制文件进度条
-        top = Toplevel()
-        top.title('Committing......')
-        self.icon_for_window(top)
+        terminal.insert('end', 'Done.')
+        # terminal.see('end')
+        # terminal.update()
 
-        pb = Progressbar(top, length=200, mode="determinate", orient=HORIZONTAL)
-        pb.pack(padx=10, pady=20)
-        pb["maximum"] = commit_size
-        pb["value"] = 0
-        # pb["value"] += 1000
-        top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
-        top.update()
+        total_size = self.convertSize(commit_size)
+        terminal.insert('end', f'\nCommitting {commit_files_number} files, total size {total_size}......\n')
+        
+        terminal.update()
+        terminal.see('end')
 
+        passed_files = 0
+        bytes_done = 0
         for i in copy_path:
             if not os.path.exists(os.path.dirname(os.path.join(path_using, '.filemanager', 'commits', str_timestamp, i))):
                 os.makedirs(os.path.dirname(os.path.join(
@@ -1342,9 +1432,19 @@ class FileManager(object):
             except:
                 terminal.insert('end', '\nerror:提交文件' +
                                 str(os.path.join(path_using, i))+'失败\n', 'red')
-            pb["value"] += os.path.getsize(os.path.join(path_using, i))/1024
-            top.update()
-        top.destroy()
+            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+            terminal.insert('end', f'\nCommitting files......({passed_files} of {commit_files_number} files, {self.convertSize(bytes_done)} of {total_size} in total)')
+            terminal.update()
+            passed_files += 1
+            bytes_done += os.path.getsize(os.path.join(path_using, i))
+            # pb["value"] += os.path.getsize(os.path.join(path_using, i))/1024
+            # top.update()
+
+        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.insert('end', f'\nCommitting files......({commit_files_number} of {commit_files_number} files, {total_size} of {total_size} in total)')
+        terminal.insert('end', '\nDone.')
+        terminal.update()
+        # top.destroy()
 
         # 读取timestamp
         with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "r", encoding='utf-8') as p:
@@ -1437,7 +1537,7 @@ class FileManager(object):
         try:
             if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv')):
                 os.remove(os.path.join(path_using, '.filemanager', 'main',
-                        'commits', str_timestamp, 'timestamp.csv'))
+                                       'commits', str_timestamp, 'timestamp.csv'))
             shutil.copy(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), os.path.join(
                 path_using, '.filemanager', 'main', 'commits', str_timestamp, 'timestamp.csv'))
         except:
@@ -1474,13 +1574,13 @@ class FileManager(object):
         self.changes['changes'] = list(
             set(self.changes['changes']) - set(self.process_path['changes']))
         self.changes['delete'] = list(set(self.changes['delete']) -
-                                set(self.process_path['delete']))
+                                      set(self.process_path['delete']))
         self.changes['create'] = list(set(self.changes['create']) -
-                                set(self.process_path['create']))
+                                      set(self.process_path['create']))
         self.process_path = {'changes': [], 'delete': [], 'create': []}
 
         f = open(os.path.join(path_using, '.filemanager',
-                'main', 'branches.json'), 'r', encoding='utf-8')
+                              'main', 'branches.json'), 'r', encoding='utf-8')
         info_data = json.load(f)
         f.close()
         branch_input = info_data['branches']
@@ -1493,7 +1593,8 @@ class FileManager(object):
             }, 'end': int(branch_input[i]['end'])})
             for j in branch_input[i]['include'].keys():
                 try:
-                    branch[i]['include'][int(j)] = branch_input[i]['include'][j]
+                    branch[i]['include'][int(
+                        j)] = branch_input[i]['include'][j]
                     if int(j) > branch_len:
                         branch_len = int(j)
                 except:
@@ -1536,8 +1637,6 @@ class FileManager(object):
         # else:
         #     # self.printchanges(self.changes, terminal, 'changes')
         #     self.printchanges()
-
-
 
     # def show_changes_in_box(self, inputen, mode):
     #     terminal = self.terminal
@@ -1696,11 +1795,10 @@ class FileManager(object):
     #                 processlist.insert('end', f'{temp}')
     #         # commandlist.delete('1.0', END)
 
-
     def printchanges(self):
         terminal = self.terminal
         # 从process_path里合并changes, delete,create
-        added=[] 
+        added = []
         for i in self.process_path['changes']:
             added.append(i)
         for i in self.process_path['delete']:
@@ -1713,28 +1811,41 @@ class FileManager(object):
             terminal.insert('end', '\nNo changes.')
         else:
             out = []
-            out.append("\n----------------Changed Files----------------")
-            for i in self.changes['changes']:
-                out.append(i)
-            out.append("----------------Deleted Files----------------")
-            for i in self.changes['delete']:
-                out.append(i)
-            out.append("----------------Created Files----------------")
-            for i in self.changes['create']:
-                out.append(i)
-        
+            changed_number = 3
+            if len(self.changes['changes']) != 0:
+                out.append("\n----------------Changed Files----------------")
+                for i in self.changes['changes']:
+                    out.append(i)
+            else:
+                changed_number -= 1
+            if len(self.changes['delete']) != 0:
+                out.append("\n----------------Deleted Files----------------")
+                for i in self.changes['delete']:
+                    out.append(i)
+            else:
+                changed_number -= 1
+            if len(self.changes['create']) != 0:
+                out.append("\n----------------Created Files----------------")
+                for i in self.changes['create']:
+                    out.append(i)
+            else:
+                changed_number -= 1
+
             # 显示更改
-            # 如果out的长度小于203
-            if len(out) < 203:
+            # 如果changed_number的长度小于200
+            changed_number += len(out)
+            if changed_number < 200:
                 for i in out:
                     if i in added:
-                    # 如果i在added里，就显示为cyan
+                        # 如果i在added里，就显示为cyan
                         terminal.insert('end', f'{i}\n', 'cyan')
                     else:
                         terminal.insert('end', f'{i}\n')
             else:
+                changed_number = len(out)
                 # 提示更改的文件太多了，已经禁用了显示功能
-                terminal.insert('end', '\nWarning:Too many files have been changed({0} files),and all filenames will not be displayed.'.format(len(out)-3), 'yellow')
+                terminal.insert(
+                    'end', f'\nWarning:Too many files have been changed({changed_number} files),and all filenames will not be displayed.', 'yellow')
                 terminal.update()
 
 # # 展示分支树
@@ -1745,7 +1856,7 @@ class FileManager(object):
         terminal = self.terminal
         path_using = self.path_using
         f = open(os.path.join(path_using, '.filemanager',
-                'main', 'branches.json'), 'r', encoding='utf-8')
+                              'main', 'branches.json'), 'r', encoding='utf-8')
         info_data = json.load(f)
         f.close()
         branch_input = info_data['branches']
@@ -1756,7 +1867,8 @@ class FileManager(object):
             }, 'end': int(branch_input[i]['end'])})
             for j in branch_input[i]['include'].keys():
                 try:
-                    branch[i]['include'][int(j)] = branch_input[i]['include'][j]
+                    branch[i]['include'][int(
+                        j)] = branch_input[i]['include'][j]
                 except:
                     pass
                     # branch = branch_input
@@ -1780,7 +1892,6 @@ class FileManager(object):
                     terminal.insert('end', i[j], 'slategray')
                 else:
                     terminal.insert('end', i[j])
-
 
     # def printchanges(self, self.process_path_in, terminal, self.mode):
     #     global path_using
@@ -1819,6 +1930,7 @@ class FileManager(object):
     #         # os.system(rf'{os.getcwd()}\cache.txt')
 
 # 创建打开文件函数，并按换行符分割内容
+
     def readfile(self, filename):
         try:
             with open(filename, 'r', encoding='utf-8') as fileHandle:
@@ -1830,7 +1942,7 @@ class FileManager(object):
             # sys.exit()
             return False
 
-# 对比异同
+    # 对比异同
     def diff(self, command_inputed):
         terminal = self.terminal
         path_using = self.path_using
@@ -1842,7 +1954,8 @@ class FileManager(object):
 
         else:
             file_path2 = filedialog.askopenfilename(initialdir=path_using)
-            dirs = os.listdir(os.path.join(path_using, '.filemanager', 'commits'))
+            dirs = os.listdir(os.path.join(
+                path_using, '.filemanager', 'commits'))
             float_dir = []
             for i in dirs:
                 float_dir.append(round(float(i)))
@@ -1853,7 +1966,7 @@ class FileManager(object):
             # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
             # 起始提交位置
             f = open(os.path.join(path_using, '.filemanager',
-                    'main', 'branches.json'), 'r', encoding='utf-8')
+                                  'main', 'branches.json'), 'r', encoding='utf-8')
             info_data = json.load(f)
             f.close()
             branch = info_data['branches']
@@ -1887,7 +2000,7 @@ class FileManager(object):
                     break
 
         if os.path.exists(file_path1) and os.path.exists(file_path2):
-            if not(self.is_binary_file(file_path1) or self.is_binary_file(file_path2)):
+            if not (self.is_binary_file(file_path1) or self.is_binary_file(file_path2)):
                 text1_lines = self.readfile(file_path1)
                 text2_lines = self.readfile(file_path2)
                 if text1_lines != False and text2_lines != False:
@@ -1932,11 +2045,11 @@ class FileManager(object):
         output = {'branches': tree_in, 'self.now_at': self.now_at}
         # dumps 将数据转换成字符串
         info_json = json.dumps(output, sort_keys=False,
-                            indent=4, separators=(',', ': '))
+                               indent=4, separators=(',', ': '))
         # 显示数据类型
         # print(type(info_json))
         f = open(os.path.join(path_using, '.filemanager',
-                'main', 'branches.json'), 'w', encoding='utf-8')
+                              'main', 'branches.json'), 'w', encoding='utf-8')
         f.write(info_json)
         f.close()
 
@@ -1971,7 +2084,6 @@ class FileManager(object):
 
 # 检出
 
-
     def checkout(self, start):
         path_using = self.path_using
         terminal = self.terminal
@@ -1986,7 +2098,7 @@ class FileManager(object):
         # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
         # 起始提交位置
         f = open(os.path.join(path_using, '.filemanager',
-                            'main', 'branches.json'), 'r', encoding='utf-8')
+                              'main', 'branches.json'), 'r', encoding='utf-8')
         info_data = json.load(f)
         f.close()
 
@@ -2065,7 +2177,7 @@ class FileManager(object):
         remove_from_delete_list = []
         for i in list(file_hash_at_that_time.keys()):
             if os.path.exists(os.path.join(path_using, i)):
-                if hash(os.path.join(path_using, i)) == file_hash_at_that_time[i]:
+                if self.hash(os.path.join(path_using, i)) == file_hash_at_that_time[i]:
                     remove_from_delete_list.append(i)
 
         file_to_delete = set(file_to_delete) - set(remove_from_delete_list)
@@ -2123,71 +2235,6 @@ class FileManager(object):
                             terminal.update()
                             terminal.see('end')
 
-        # for i in dir_using:
-        #     for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
-        #         for name in files:
-        #             if not os.path.relpath(os.path.join(root, name), os.path.join(path_using, '.filemanager', 'commits', root, name)) in dir_path:
-        #                 # mtime = round(os.stat(os.path.join(root, name)).st_mtime)
-        #                 dir_path.append(os.path.relpath(os.path.join(root, name), os.path.join(
-        #                     path_using, '.filemanager', 'commits', i)))
-
-        # for i in dir_delete:
-        #     for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
-        #         for name in files:
-        #             if not os.path.relpath(os.path.join(root, name), os.path.join(path_using, '.filemanager', 'commits', root, name)) in dir_path:
-        #                 # mtime = round(os.stat(os.path.join(root, name)).st_mtime)
-        #                 file_delete.append(os.path.relpath(os.path.join(root, name), os.path.join(
-        #                     path_using, '.filemanager', 'commits', i)))
-
-        # for i in file_delete:
-        #     if os.path.exists(os.path.join(path_using, i)):
-        #         try:
-        #             terminal.insert('end', '\nremoving:'+str(os.path.join(path_using, i))+'\n')
-        #             terminal.update()
-        #             terminal.see('end')
-        #             os.remove(os.path.join(path_using, i))
-        #             if os.path.dirname(os.path.join(path_using, i)) != path_using:
-        #                 try:
-        #                     os.removedirs(os.path.dirname(os.path.join(path_using, i)))
-        #                 except:
-        #                     pass
-        #         except:
-        #             terminal.insert('end', '\nerror:'+i+'删除失败\n', 'red')
-        #             terminal.update()
-        #             terminal.see('end')
-
-        # dir_using.reverse()
-
-        # # for n in range(len(dir_using)-1,1,-1):
-        # # i = dir_using[n]
-        # for i in dir_using:
-        #     for root, dirs, files in os.walk(os.path.join(path_using, '.filemanager', 'commits', i)):
-        #         for name in files:
-        #             # print(os.path.join(root, name))
-        #             if os.path.exists(os.path.join(root, name)):
-        #                 # mtime = round(os.stat(os.path.join(root, name)).st_mtime)
-        #                 # prit()
-        #                 # # print(os.path.join(os.path.relpath(os.path.join(root, name), os.path.join(path_using, '.filemanager', 'commits')), path_using, name))
-        #                 target = os.path.join(path_using,os.path.relpath(os.path.join(root, name), os.path.join(
-        #                             os.path.join(path_using, '.filemanager', 'commits', i))))
-        #                 if not os.path.exists(target):
-        #                     try:
-        #                         # # print(target)
-        #                         target_dir = os.path.dirname(target)
-        #                         if target_dir != '' and not os.path.exists(target_dir):
-        #                             os.makedirs(target_dir)
-        #                         shutil.copy(os.path.join(root, name),  target)
-        #                         terminal.insert('end', '\nchecking out:'+str(target)+'\n')
-        #                         terminal.update()
-        #                         terminal.see('end')
-        #                         dir_path.remove(os.path.relpath(os.path.join(root, name), os.path.join(
-        #                             path_using, '.filemanager', 'commits', i)))
-        #                     except:
-        #                         terminal.insert(
-        #                             'end', '\nerror:'+str(os.path.join(root, name))+'导出失败\n', 'red')
-        #                         terminal.update()
-        #                         terminal.see('end')
-
         exit_flag = False
         while True:
             for ch in ['-', '\\', '|', '/']:
@@ -2207,7 +2254,8 @@ class FileManager(object):
                     terminal.delete(terminal.index(
                         'end-1c').split('.')[0]+'.0', 'end')
             if exit_flag:
-                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                terminal.delete(terminal.index(
+                    'end-1c').split('.')[0]+'.0', 'end')
                 terminal.insert('end', '\nWaiting......Done.')
                 break
 
@@ -2266,14 +2314,13 @@ class FileManager(object):
             terminal.insert('end', '\nerror:检出timestamp失败', 'red')
 
         f = open(os.path.join(path_using, '.filemanager',
-                'main', 'branches.json'), 'r', encoding='utf-8')
+                              'main', 'branches.json'), 'r', encoding='utf-8')
         info_data = json.load(f)
         f.close()
         branch = info_data['branches']
         self.write_branch(branch)
 
         self.print_branch()
-
 
     def help(self, inputten):
         terminal = self.terminal
@@ -2313,13 +2360,13 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 
 
 def run_command(command, terminal, commandinput, fm):
-    global path_using, command_inputed, inited, now_path, start_path, info_add, commit_text, command_chosen
+    global path_using, command_inputed, inited, now_path, start_path, commit_text, command_chosen
 
     def contiune_command():
         terminal.insert('end', '\n')
         # # print(info_add)
         # # print(path_using + info_add)
-        TerminalText.insert('end', path_using + info_add + '\n', 'green')
+        TerminalText.insert('end', path_using + fm.info_add + '\n', 'green')
         terminal.insert('end', f'$ ')
         terminal.window_create('end', window=commandinput)
         commandinput.focus_set()  # """
@@ -2344,9 +2391,9 @@ def run_command(command, terminal, commandinput, fm):
             terminal_infos.input_list.append(command)  # 增加输入了什么命令
             terminal.insert('end', command)
             if fm.inited:
-                info_add = '('+fm.id_read[0:6]+'...)'
+                fm.info_add = '('+fm.id_read[0:6]+'...)'
             else:
-                info_add = ''
+                fm.info_add = ''
             if now_path == '':
                 fm.path_using = start_path
             else:
@@ -2370,7 +2417,7 @@ def run_command(command, terminal, commandinput, fm):
                     if command_inputed[1] == '-?':
                         webbrowser.open(fm.help_url, new=0, autoraise=True)
                 else:
-                    help('help')
+                    fm.help('help')
                 contiune_command()
 
             elif command_inputed[0] == "init":
@@ -2423,10 +2470,11 @@ def run_command(command, terminal, commandinput, fm):
                         path_using = now_path = os.getcwd()
                         os.chdir(start_path)
                         fm.inited = False
-                        info_add = ''
-                        fm.changes = {'changes': [], 'delete': [], 'create': []}
+                        fm.info_add = ''
+                        fm.changes = {'changes': [],
+                                      'delete': [], 'create': []}
                         fm.process_path = {'changes': [],
-                                        'delete': [], 'create': []}
+                                           'delete': [], 'create': []}
 
                     except OSError as error:
                         terminal.insert('end', '\n'+error.args[1]+'\n', 'red')
@@ -2529,7 +2577,7 @@ def run_command(command, terminal, commandinput, fm):
 
             elif command_inputed[0] == 'reload':
                 if '-?' in command_inputed:
-                    help('init')
+                    fm.help('reload')
                 elif fm.inited:
                     # terminal.insert('end', command)
                     fm.reload()
@@ -2660,6 +2708,7 @@ def run_command(command, terminal, commandinput, fm):
     terminal.config(state='d')
     terminal.see('end')
 
+
 def post_inputlist(inputen):
     # 弹出效果展示中的命令列表
     def setit(setmessage):
@@ -2717,6 +2766,7 @@ def commanddown(inputen):
 #     f.write(terminal_infos.version)
 #     f.close()
 
+
 # 创建窗口
 root = tk.Tk()
 # 设置标题
@@ -2753,6 +2803,7 @@ TerminalText.tag_config('yellow', foreground='#ffff7e',
 TerminalText['state'] = 'n'
 # TerminalText.insert('end',f'EasyTerminal {terminal_infos.version} By {terminal_infos.by}\n')
 TerminalText.insert('end', f'FileManager(FM) {terminal_infos.version}\n')
+TerminalText.insert('end', 'Type "help" or "?" for help.\n')
 
 fm = FileManager(TerminalText)
 fm.start_path = start_path
