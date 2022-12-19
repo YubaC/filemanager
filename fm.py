@@ -54,18 +54,35 @@ from tkinter.messagebox import askokcancel
 
 import windnd
 
+# # 原文链接：https://blog.csdn.net/weixin_43849588/article/details/106911480
+# import ctypes
+# #告诉操作系统使用程序自身的dpi适配
+# try:  # >= win 8.1
+#     ctypes.windll.shcore.SetProcessDpiAwareness(2)
+
+# except:  # win 8.0 or less
+#     ctypes.windll.user32.SetProcessDPIAware()
+
+# 帮助界面链接
 help_url = "https://yubac.github.io/fmhelp/index.html"
 
 # 列表中存储的是元素是元组
 mode_to_select = [('添加文件', 0, '+'), ('移除文件', 1, '-')]
 
 command_chosen = 0
+
+# 是否打开了文件暂存、移除窗口
 adder_opened = False
 
 exit_flag = False
+
+# 现在所在的路径（进入的路径）
 now_path = ''
 
+# 软件所在的位置
 home = os.path.expanduser('~')
+
+# 免安装版的预留
 if not os.path.exists('USBDisk'):
     start_path = os.path.join(home, r'AppData\Local\Programs\FileManager\fm')
 else:
@@ -77,7 +94,9 @@ if start_path != os.getcwd():
 else:
     path_using = start_path
 
+# 所有文件大小综合
 all_size = 0
+# 文件数目
 all_number = 0
 
 info_add = ''
@@ -85,20 +104,27 @@ info_add = ''
 s = 0
 
 inited_all_number = 0
+
+# 是否加载了仓库
 inited = False
 
-# all_timestamp={}
+# 所有的更改
 changes = {'changes': [], 'delete': [], 'create': []}
 
+# 需要提交的更改
 process_path = {'changes': [], 'delete': [], 'create': []}
 
+# 现在所在的提交位置
 now_at = 0
+
+# 现在所在的分支
 now_branch = 0
 
 window_opened = False
 
 deletes = []
 
+# 输入的命令
 command_inputed = []
 
 _TEXT_BOMS = (
@@ -109,7 +135,7 @@ _TEXT_BOMS = (
     codecs.BOM_UTF8,
 )
 
-
+# 计算HASH值
 def hash(file_path, Bytes=1024):
     md5_1 = hashlib.md5()  # 创建一个md5算法对象
     with open(file_path, 'rb') as f:  # 打开一个文件，必须是'rb'模式打开
@@ -122,9 +148,11 @@ def hash(file_path, Bytes=1024):
     ret = md5_1.hexdigest()  # 获取这个文件的MD5值
     return ret
 
-
+# 更新仓库的timestamp.csv文件里存储的文件Hash值
 def writefilehash(path_list):
     global path_using
+
+    # 进度条窗口
     top = Toplevel()
     top.title('Hashing......')
     icon_for_window(top)
@@ -166,7 +194,7 @@ def writefilehash(path_list):
 def callback():
     pass  # 这个函数不做任何事，实际上让关闭按钮失效
 
-
+# 判断是否为二进制文件
 def is_binary_file(file_path):
     with open(file_path, 'rb') as file:
         initial_bytes = file.read(8192)
@@ -179,7 +207,7 @@ def is_binary_file(file_path):
                     return True
     return False
 
-
+# 升级仓库版本，添加Hash值
 def update(terminal):
     global path_using
     if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
@@ -210,6 +238,8 @@ def update(terminal):
     else:
         terminal.insert('end', "\nerror:这不是一个filemanager仓库", 'red')
 
+# 加载仓库
+
 
 def init(terminal):
     global id_read
@@ -221,6 +251,7 @@ def init(terminal):
     global changes
     global now_at
 
+# 判断是否是一个仓库（检测version.txt）
     if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'version.txt')):
         with open(os.path.join(path_using, '.filemanager', 'main', 'version.txt'), 'r', encoding='utf-8') as f:
             repo_version_loaded = f.read()
@@ -246,7 +277,7 @@ def init(terminal):
                 'end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
 
         else:
-            
+            # 如果有不正常的提交（没有记录的提交，会造成检出异常）
             if undone_commit_dirs != []:
                 unremoved_dirs = []
                 terminal.insert('end', "\nDeleting abnormal commits......")
@@ -273,7 +304,7 @@ def init(terminal):
             if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'branches.json')):
                 # 起始提交位置
                 f = open(os.path.join(path_using, '.filemanager',
-                                        'main', 'branches.json'), 'r', encoding='utf-8')
+                                      'main', 'branches.json'), 'r', encoding='utf-8')
                 info_data = json.load(f)
                 f.close()
                 now_at = int(info_data['now_at'])
@@ -313,7 +344,7 @@ def init(terminal):
                 # printchanges(changes, terminal)
 
                 print_branch(terminal)
-        
+
             # if askokcancel('ERROR', 'ERROR:FileManager没有足够的权限来执行命令。您希望以管理员权限重新启动FileManager吗？'):
             #     with open(os.path.join(path_using, 'restartfm.bat'), 'w', encoding='utf-8') as f:
             #         f.write('@echo off\n%1 mshta vbscript:CreateObject("Shell.Application").ShellExecute("cmd.exe","/c %~s0 ::","","runas",1)(window.close)&&exit\ntaskkill /f /pid fm.exe\n')
@@ -324,6 +355,8 @@ def init(terminal):
             #     os.system(os.path.join(path_using, 'restartfm.bat'))
     else:
         terminal.insert('end', "\nerror:这不是一个filemanager仓库", 'red')
+
+# 用监视器监视仓库
 
 
 def add_to_monitor():
@@ -408,6 +441,8 @@ def copy(path1, path2):
 
     exit_flag = True
 
+# 创建timestamp.csv
+
 
 def createtimestamp(path1, filename):
     # global progress
@@ -456,6 +491,8 @@ def createtimestamp(path1, filename):
 #                 break
 #         if exit_flag:
 #             break
+
+# 刷新
 
 
 def refreash(path_in, terminal):
@@ -645,6 +682,8 @@ def refreash(path_in, terminal):
     new_files = {}
     delete = []
     create = []
+
+# 刷新
 
 
 def reload(path_in, terminal):
@@ -867,9 +906,8 @@ def reload(path_in, terminal):
         terminal.insert('end', '\nWARNING:位于{0}的仓库并没有被monitor所监控，您的更改可能不会被察觉。请使用"refreash"命令以加载完整变更。'.format(
             str(path_in)), 'yellow')
 
+
 # 新建仓库的命令
-
-
 def newrepo(path_in, terminal):
     global info_add
     global exit_flag
@@ -1000,6 +1038,8 @@ def newrepo(path_in, terminal):
             f.write(terminal_infos.version)
             f.close()
 
+# 暂存/取消暂存的窗口
+
 
 def adder(terminal, command):
     def callRB():
@@ -1090,6 +1130,8 @@ def adder(terminal, command):
             # 进入消息循环
             # top.mainloop()
             top.protocol('WM_DELETE_WINDOW', exitbutton)
+
+# 暂存
 
 
 def add(terminal, paths, command_inputed):
@@ -1185,6 +1227,8 @@ def add(terminal, paths, command_inputed):
 
     else:
         terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
+
+# 提交
 
 
 def commit(terminal, str_timestamp_in):
@@ -1444,6 +1488,8 @@ def commit(terminal, str_timestamp_in):
     else:
         printchanges(changes, terminal, 'changes')
 
+# 展示分支树
+
 
 def show_changes_in_box(inputen, terminal, mode):
     global deletes, path_using, window_opened, postwin, processlist, changeslist, changes
@@ -1650,6 +1696,8 @@ def readfile(filename):
         # sys.exit()
         return False
 
+# 对比异同
+
 
 def diff(terminal):
     global command_inputed, inited, now_at
@@ -1746,6 +1794,8 @@ def diff(terminal):
     else:
         terminal.insert('end', '\nerror:文件不存在', 'red')
 
+# 写分支
+
 
 def write_branch(tree_in):
     global path_using, now_at
@@ -1759,6 +1809,8 @@ def write_branch(tree_in):
              'main', 'branches.json'), 'w', encoding='utf-8')
     f.write(info_json)
     f.close()
+
+# 寻找目标提交的所有父提交（顺着一条线下来）
 
 
 def find_older_commit_in_branch(branch_in, target):
@@ -1788,6 +1840,8 @@ def find_older_commit_in_branch(branch_in, target):
                     commit_in_branch.append(int(j))
     commit_in_branch.sort()
     return [commit_in_branch, commit_after_that_commit]
+
+# 检出
 
 
 def checkout(start, terminal):
@@ -2153,6 +2207,8 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 
 # 运行输入的内容调用的函数
 
+# 窗口代码
+
 
 def run_command(command, terminal, commandinput):
     global path_using, command_inputed, inited, now_path, start_path, info_add, commit_text, now_at, command_chosen, changes, process_path
@@ -2267,7 +2323,8 @@ def run_command(command, terminal, commandinput):
                         inited = False
                         info_add = ''
                         changes = {'changes': [], 'delete': [], 'create': []}
-                        process_path = {'changes': [], 'delete': [], 'create': []}
+                        process_path = {'changes': [],
+                                        'delete': [], 'create': []}
 
                     except OSError as error:
                         terminal.insert('end', '\n'+error.args[1]+'\n', 'red')
@@ -2497,11 +2554,13 @@ def run_command(command, terminal, commandinput):
                 contiune_command()
 
     except Exception as e:
-        terminal.insert('end',e,'red')
+        terminal.insert('end', e, 'red')
         contiune_command()
 
     terminal.config(state='d')
     terminal.see('end')
+
+# 计算并绘制分支树
 
 
 def print_branch(terminal):
