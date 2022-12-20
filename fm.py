@@ -127,8 +127,6 @@ class FileManager(object):
         # 列表中存储的是元素是元组
         self.mode_to_select = [('添加文件', 0, '+'), ('移除文件', 1, '-')]
 
-        self.command_chosen = 0
-
         # 是否打开了文件暂存、移除窗口
         self.adder_opened = False
 
@@ -542,7 +540,7 @@ class FileManager(object):
                     done += 1
             p.close()
         terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.insert('end', f'\nCalculating timestamp value......({self.all_number} of {self.all_number})')
+        terminal.insert('end', f'\nCalculating timestamp value......({done} of {done})')
         terminal.insert('end', '\nDone.')
         terminal.update()
 
@@ -2360,7 +2358,7 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 
 
 def run_command(command, terminal, commandinput, fm):
-    global path_using, command_inputed, inited, now_path, start_path, commit_text, command_chosen
+    global path_using, command_inputed, inited, now_path, start_path, commit_text, command_chosen, used_before_command
 
     def contiune_command():
         terminal.insert('end', '\n')
@@ -2375,10 +2373,13 @@ def run_command(command, terminal, commandinput, fm):
         # win_height = terminal.winfo_reqheight()
         # # print(win_width,win_height)
     try:
+        command_chosen = len(terminal_infos.input_list)
+        used_before_command = False
+
         errortext = f'错误指令"{command.strip()}"。'
 
         command = str(command)  # 这玩意是应付编辑器不知道command是什么类型的
-        command_chosen = len(terminal_infos.input_list)
+
         terminal.config(state='n')  # 解锁terminal(Text)
 
         terminal.delete('end')  # 删除输入控件
@@ -2737,26 +2738,31 @@ def post_inputlist(inputen):
     for temp in terminal_infos.input_list:
         commandlist.insert('end', f'{temp}')
 
+command_chosen = 0
+used_before_command = False
 
+# 按键盘上的↑时，将输入框的内容替换为上一次输入的内容，再按就是上上次输入的内容
 def commandup(inputen):
-    global command_chosen, terminal_infos
-    if len(terminal_infos.input_list) >= command_chosen:
-        if command_chosen > 0:
-            command_chosen -= 1
-        else:
-            command_chosen = len(terminal_infos.input_list) - 1
-
+    # 如果上一次输入命令后还没有按过键盘的↑↓键
+    global command_chosen, terminal_infos, used_before_command
+    if not used_before_command:
+        used_before_command = True
+    elif command_chosen > 0:
+        command_chosen -= 1
+    else:
+        command_chosen = len(terminal_infos.input_list) - 1
     inputen.delete(0, 'end')
     inputen.insert('end', terminal_infos.input_list[command_chosen])
 
-
 def commanddown(inputen):
-    global command_chosen, terminal_infos
-    if len(terminal_infos.input_list) - 1 > command_chosen:
+    global command_chosen, terminal_infos, used_before_command
+    if not used_before_command:
+        used_before_command = True
+        command_chosen = len(terminal_infos.input_list) - 1
+    elif len(terminal_infos.input_list) - 1 > command_chosen:
         command_chosen += 1
     else:
         command_chosen = 0
-
     inputen.delete(0, 'end')
     inputen.insert('end', terminal_infos.input_list[command_chosen])
 
