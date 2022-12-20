@@ -87,8 +87,6 @@ class tk:
     from tkinter.scrolledtext import ScrolledText
 
 # 设置信息，可选
-
-
 class terminal_infos:
     with open(os.path.join(start_path, 'version.txt'), 'r', encoding='utf-8') as f:
         version = f.read()
@@ -110,6 +108,21 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os import getcwd,chdir,startfile,popen
     # from os.path import isfile,isdir,join
 
+# 进度展示
+class ShowProgress(object):
+    def __init__(self, terminal, title):
+        self.terminal = terminal
+        self.title = title
+        # self.max_value = max_value
+        terminal.insert('end','\n')
+    
+    def update(self, now_value):
+        terminal = self.terminal
+        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        terminal.insert('end', '\n' + self.title.format(now_value))
+        # terminal.insert('end', f'\n{self.title}({now_value} of )......')
+        terminal.update()
+        terminal.see('end')
 
 class FileManager(object):
     def __init__(self, terminal):
@@ -191,22 +204,7 @@ class FileManager(object):
         path_using = self.path_using
 
         terminal = self.terminal
-        terminal.insert('end', f'\nCalculating hash value......(0 of {len(path_list)})')
-        terminal.update()
-        terminal.see('end')
-        # 进度条窗口
-        # top = Toplevel()
-        # top.title('Hashing......')
-        # self.icon_for_window(top)
-        # pb = Progressbar(top, length=200, mode="determinate",
-        #                  orient=HORIZONTAL)
-        # pb.pack(padx=10, pady=20)
-
-        # pb["maximum"] = len(path_list)
-        # pb["value"] = 0
-        # pb["value"] += 1000
-        # top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
-        # top.update()
+        pb = ShowProgress(terminal, 'Calculating hash value({0[0]} of {0[1]})......')
 
         # 读取timestamp
         done = 0
@@ -224,18 +222,15 @@ class FileManager(object):
                 for j in range(len(timestamp)):
                     if timestamp[j][0] == i:
                         timestamp[j][2] = file_hash
-                        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-                        terminal.insert('end', f'\nCalculating hash value......({done} of {len(path_list)})')
-                        terminal.update()
                         done += 1
+                        pb.update([done, len(path_list)])
                         break
                 # timestamp[timestamp.index(i)][2] = file_hash
             except:
                 pass
         # top.destroy()
-        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.insert('end', f'\nCalculating hash value......({len(path_list)} of {len(path_list)})')
-        terminal.insert('end', '\nDone.\n')
+        pb.update([len(path_list), len(path_list)])
+        terminal.insert('end','Done.')
         terminal.update()
         with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
             for i in timestamp:
@@ -326,13 +321,13 @@ class FileManager(object):
                 terminal.insert('end', "\nerror:init失败", 'red')
                 terminal.insert(
                     'end', '\nWARNING:这个仓库是被版本{0}的FileManager创建的。使用"init -update"命令以加载这个仓库。'.format(repo_version_loaded), 'yellow')
-
             else:
                 # 如果有不正常的提交（没有记录的提交，会造成检出异常）
                 if undone_commit_dirs != []:
                     unremoved_dirs = []
                     terminal.insert('end', "\nDeleting abnormal commits......")
                     terminal.update()
+                    terminal.see('end')
                     for i in undone_commit_dirs:
                         try:
                             shutil.rmtree(os.path.join(
@@ -375,6 +370,7 @@ class FileManager(object):
 
                     terminal.insert('end', '\nIniting......')
                     terminal.update()
+                    terminal.see('end')
 
                     self.inited_all_number = 0
                     for root, dirs, files in os.walk(path_using):
@@ -461,9 +457,11 @@ class FileManager(object):
         total_size = self.convertSize(self.all_size)
         terminal = self.terminal
 
-        terminal.insert('end', f'\nCopying {self.all_number} files, total size {total_size}......\n')
-        terminal.update()
-        terminal.see('end')
+        pb = ShowProgress(terminal, 'Copying files({0[0]} of {0[1]} files, {0[2]} of {0[3]} in total)......')
+
+        # terminal.insert('end', f'\nCopying {self.all_number} files, total size {total_size}......\n')
+        # terminal.update()
+        # terminal.see('end')
 
         done = 0
         done_size = 0
@@ -477,25 +475,21 @@ class FileManager(object):
                     os.path.join(root, name), path1))
                 if not os.path.exists(os.path.dirname(targetname)):
                     os.makedirs(os.path.dirname(targetname))
-                thisadd = os.path.getsize(sourname)/1024
+                thisadd = os.path.getsize(sourname)
                 shutil.copy(sourname, targetname)
                 # open(targetname,'wb').write(open(sourname,'rb').read())
 
-                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-                terminal.insert('end', f'\nCopying files......({done} of {self.all_number} files, {self.convertSize(done_size)} of {total_size} in total)')
-                terminal.update()
                 done += 1
+                pb.update([done, self.all_number, self.convertSize(done_size+thisadd), total_size])
                 done_size += thisadd
 
-        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.insert('end', f'\nCopying files......({self.all_number} of {self.all_number} files, {total_size} of {total_size} in total)')
-        terminal.insert('end', '\nDone.')
+        self.exit_flag = True
+        pb.update([self.all_number, self.all_number, total_size, total_size])
+        terminal.insert('end','Done.')
         terminal.update()
         terminal.see('end')
-        self.exit_flag = True
 
-# 创建timestamp.csv
-
+    # 创建timestamp.csv
     def createtimestamp(self, path1, filename):
         terminal = self.terminal
         # global progress
@@ -512,9 +506,10 @@ class FileManager(object):
 
         # top = Toplevel()
         # top.title('Timestamping......')
-        terminal.insert('end', f'\nCalculating timestamp value......(0 of {self.all_number})')
-        terminal.update()
-        terminal.see('end')
+        pb = ShowProgress(terminal, 'Calculating timestamp value({0[0]} of {0[1]})......')
+        # terminal.insert('end', f'\nCalculating timestamp value......(0 of {self.all_number})')
+        # terminal.update()
+        # terminal.see('end')
 
         # self.icon_for_window(top)
         # pb = Progressbar(top, length=200, mode="determinate",
@@ -534,15 +529,18 @@ class FileManager(object):
                 for name in files:
                     p.write(os.path.relpath(os.path.join(root, name), path1) +
                             ','+str(round(os.stat(root + '/' + name).st_mtime))+',-1\n')
-                    terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-                    terminal.insert('end', f'\nCalculating timestamp value......({done} of {self.all_number})')
-                    terminal.update()
+                    # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                    # terminal.insert('end', f'\nCalculating timestamp value......({done} of {self.all_number})')
+                    # terminal.update()
                     done += 1
+                    pb.update([done, self.all_number])
             p.close()
-        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.insert('end', f'\nCalculating timestamp value......({done} of {done})')
-        terminal.insert('end', '\nDone.')
+        # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        # terminal.insert('end', f'\nCalculating timestamp value......({done} of {done})')
+        pb.update([done, done])
+        terminal.insert('end', 'Done.')
         terminal.update()
+        terminal.see('end')
 
 # 等待动画
 # def wait():
@@ -588,7 +586,7 @@ class FileManager(object):
                     os.path.join(root, name))/1024
                 self.inited_all_number += 1
         
-        terminal.insert('end', 'Done.\n')
+        terminal.insert('end', 'Done.')
         terminal.update()
 
         # 读取保存的时间戳
@@ -613,6 +611,7 @@ class FileManager(object):
         # # pb["value"] += 1000
         # top.protocol('WM_DELETE_WINDOW', self.callback)  # 窗体的通信协议方法
         # top.update()
+        pb = ShowProgress(terminal, 'Checking files({0[0]} of {0[1]})......')
 
         passed_files = 0
         for root, dirs, files in os.walk(path_in):
@@ -620,11 +619,11 @@ class FileManager(object):
                 dirs[:] = []  # 忽略当前目录下的子目录
             for name in files:
                 # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-                terminal.see('end')
+                # terminal.see('end')
                 # terminal.update()
-                terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-                terminal.insert('end', f'\nChecking files......({passed_files}/{self.inited_all_number})')
-                terminal.update()
+                # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+                # terminal.insert('end', f'\nChecking files......({passed_files}/{self.inited_all_number})')
+                # terminal.update()
                 # pb["value"] = passed_files      # 每次更新1
                 # top.update()
                 mtime = round(os.stat(os.path.join(root, name)).st_mtime)
@@ -632,6 +631,7 @@ class FileManager(object):
                 walk_loaded[dir_path] = str(mtime)
                 # progress.update(task3, advance=1)
                 passed_files += 1
+                pb.update([passed_files, self.inited_all_number])
                 # pb["value"] = passed_files      # 每次更新1
                 # top.update()
                 # # print(passed_files)
@@ -639,9 +639,10 @@ class FileManager(object):
             # progress.update(task3, advance=inited_all_number)
         # top.destroy()
         # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.insert('end', f'\nChecking files......({self.inited_all_number}/{self.inited_all_number})\n')
-        terminal.update()
+        # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        # terminal.insert('end', f'\nChecking files......({self.inited_all_number}/{self.inited_all_number})\n')
+        # terminal.insert('end','Done.')
+        # terminal.update()
         # terminal.see('end')
 
         # 比较不同
@@ -1150,6 +1151,9 @@ class FileManager(object):
             with open(os.path.join(path_in, '.filemanager', 'main', 'version.txt'), "w", encoding='utf-8') as f:
                 f.write(terminal_infos.version)
                 f.close()
+            
+            terminal.insert('end','\nDone.')
+
 
     # 暂存/取消暂存的窗口
     # def adder(self, command):
@@ -1413,10 +1417,12 @@ class FileManager(object):
         # terminal.update()
 
         total_size = self.convertSize(commit_size)
-        terminal.insert('end', f'\nCommitting {commit_files_number} files, total size {total_size}......\n')
+        # terminal.insert('end', f'\nCommitting {commit_files_number} files, total size {total_size}......\n')
         
-        terminal.update()
-        terminal.see('end')
+        # terminal.update()
+        # terminal.see('end')
+
+        pb = ShowProgress(terminal, 'Committing files({0[0]} of {0[1]} files, {0[2]} of {0[3]} in total)......')
 
         passed_files = 0
         bytes_done = 0
@@ -1430,16 +1436,18 @@ class FileManager(object):
             except:
                 terminal.insert('end', '\nerror:提交文件' +
                                 str(os.path.join(path_using, i))+'失败\n', 'red')
-            terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-            terminal.insert('end', f'\nCommitting files......({passed_files} of {commit_files_number} files, {self.convertSize(bytes_done)} of {total_size} in total)')
-            terminal.update()
+            # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+            # terminal.insert('end', f'\nCommitting files......({passed_files} of {commit_files_number} files, {self.convertSize(bytes_done)} of {total_size} in total)')
+            # terminal.update()
             passed_files += 1
-            bytes_done += os.path.getsize(os.path.join(path_using, i))
             # pb["value"] += os.path.getsize(os.path.join(path_using, i))/1024
             # top.update()
+            pb.update([passed_files, commit_files_number, self.convertSize(bytes_done), total_size])
+            bytes_done += os.path.getsize(os.path.join(path_using, i))
 
-        terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
-        terminal.insert('end', f'\nCommitting files......({commit_files_number} of {commit_files_number} files, {total_size} of {total_size} in total)')
+        # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
+        # terminal.insert('end', f'\nCommitting files......({commit_files_number} of {commit_files_number} files, {total_size} of {total_size} in total)')
+        pb.update([commit_files_number, commit_files_number, total_size, total_size])
         terminal.insert('end', '\nDone.')
         terminal.update()
         # top.destroy()
@@ -2080,7 +2088,7 @@ class FileManager(object):
         commit_in_branch.sort()
         return [commit_in_branch, commit_after_that_commit]
 
-# 检出
+    # 检出
 
     def checkout(self, start):
         path_using = self.path_using
@@ -2181,13 +2189,15 @@ class FileManager(object):
         file_to_delete = set(file_to_delete) - set(remove_from_delete_list)
 
         # 删除文件
+        pb = ShowProgress(terminal, 'Removing files({0[0]} of {0[1]})......')
+        pb.update([0,0])
+        done = 0
         for i in file_to_delete:
             if os.path.exists(os.path.join(path_using, i)):
                 try:
-                    terminal.insert('end', '\nremoving:' +
-                                    str(os.path.join(path_using, i))+'\n')
-                    terminal.update()
-                    terminal.see('end')
+                    done += 1
+                    pb.update([done,len(file_to_delete)])
+
                     os.remove(os.path.join(path_using, i))
                     if not os.listdir(os.path.dirname(os.path.join(path_using, i))):
                         try:
@@ -2200,8 +2210,14 @@ class FileManager(object):
                     terminal.update()
                     terminal.see('end')
 
-        # 复制文件
+        pb.update([len(file_to_delete), len(file_to_delete)])
+        terminal.insert('end','Done.')
+        terminal.update()
 
+        # 复制文件
+        pb = ShowProgress(terminal, 'Checking out files from your earlier commits......{0[0]} files have been checked out......')
+        pb.update([0])
+        done = 0
         file_copy_dir = []
         # for i in float_dir[0:start+1]:
         for i in before:
@@ -2223,15 +2239,20 @@ class FileManager(object):
                             if not os.path.exists(os.path.join(path_using, file_realtive_path)):
                                 shutil.copy(os.path.join(root, name), os.path.join(
                                     path_using, file_realtive_path))
-                                terminal.insert(
-                                    'end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
-                                terminal.update()
-                                terminal.see('end')
+                                done += 1
+                                pb.update([done])
+                                # terminal.insert(
+                                #     'end', '\nchecking out:'+str(os.path.join(path_using, file_realtive_path))+'\n')
+                                # terminal.update()
+                                # terminal.see('end')
                         except:
                             terminal.insert(
                                 'end', '\nerror:'+str(os.path.join(root, name))+'导出失败\n', 'red')
                             terminal.update()
                             terminal.see('end')
+        # if len(file_copy_dir) != 0:
+        terminal.insert('end','Done.')
+        terminal.update()
 
         exit_flag = False
         while True:
