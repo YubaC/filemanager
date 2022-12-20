@@ -64,7 +64,8 @@ import windnd
 #     ctypes.windll.user32.SetProcessDPIAware()
 
 command_inputed = []
-
+asked_recommit = False
+commit_text = ''
 
 # 现在所在的路径（进入的路径）
 now_path = ''
@@ -1637,6 +1638,32 @@ class FileManager(object):
         self.print_branch()
         # self.printchanges(self.changes, terminal, '!destroy')
         self.printchanges()
+        
+    
+    # 重提交
+    def recommit(self, commit_text):
+        if not commit_text == '':
+            dirs = os.listdir(os.path.join(
+                path_using, '.filemanager', 'commits'))
+            float_dir = []
+            for i in dirs:
+                float_dir.append(round(float(i)))
+
+            float_dir.sort()
+            for i in self.process_path['changes']:
+                try:
+                    os.remove(os.path.join(
+                        path_using, '.filemanager', 'commits', str(float_dir[self.now_at]), i))
+                except:
+                    pass
+            for i in self.process_path['delete']:
+                try:
+                    os.remove(os.path.join(
+                        path_using, '.filemanager', 'commits', str(float_dir[self.now_at]), i))
+                except:
+                    pass
+            self.commit(commit_text, str(float_dir[self.now_at]))
+                    # terminal.insert('end', "\n重提交成功", 'green')        
         # if self.changes == {'changes': [], 'delete': [], 'create': []}:
         #     if self.adder_opened:
         #         self.adder('!destroy')
@@ -2379,7 +2406,7 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 
 
 def run_command(command, terminal, commandinput, fm):
-    global path_using, command_inputed, inited, now_path, start_path, commit_text, command_chosen, used_before_command
+    global path_using, command_inputed,  now_path, start_path, commit_text, command_chosen, used_before_command, asked_recommit, commit_text
 
     def contiune_command():
         terminal.insert('end', '\n')
@@ -2672,11 +2699,22 @@ def run_command(command, terminal, commandinput, fm):
                     contiune_command()
                 # terminal.insert('end', command)
                 elif not fm.process_path == {'changes': [], 'delete': [], 'create': []}:
-                    entry_str = simpledialog.askstring(
-                        title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
-                    # pattern1 = re.compile(r"'(\w+)'")
-                    # pattern2 = re.compile(r'"(\w+)"')
-                    if entry_str == 'recommit' or entry_str == 'RECOMMIT':
+                    if asked_recommit:
+                        terminal.config(state='n')  # 解锁terminal(Text)
+
+                        terminal.delete('end')  # 删除输入控件
+                        # commandinput.delete(0, 'end')  # 删除控件里输入的文本
+                        terminal.update()
+                        if str(command).strip() == '':  # 如果啥也没输入
+                            terminal.insert('end', command)  # 就复述输入内容
+                        else:
+                            # terminal.insert('end', '\n' + command + '\n')
+                            terminal.update()
+                            if command == 'recommit':
+                                fm.recommit(commit_text)
+                        contiune_command()
+                        asked_recommit = False
+                    else:
                         all_text = ''
                         for i in command_inputed:
                             all_text += i + ' '
@@ -2692,28 +2730,19 @@ def run_command(command, terminal, commandinput, fm):
                             commit_text = text2[1]
                         else:
                             commit_text = text1[1]
-                        if not commit_text == '':
-                            dirs = os.listdir(os.path.join(
-                                path_using, '.filemanager', 'commits'))
-                            float_dir = []
-                            for i in dirs:
-                                float_dir.append(round(float(i)))
+                        
+                        if commit_text != '':
+                            terminal.insert('end','\n为了确认，在下方输入"recommit"\n')
+                            terminal.window_create('end', window=commandinput)
+                            commandinput.focus_set()
+                            asked_recommit = True
 
-                            float_dir.sort()
-                            for i in fm.process_path['changes']:
-                                try:
-                                    os.remove(os.path.join(
-                                        path_using, '.filemanager', 'commits', str(float_dir[fm.now_at]), i))
-                                except:
-                                    pass
-                            for i in fm.process_path['delete']:
-                                try:
-                                    os.remove(os.path.join(
-                                        path_using, '.filemanager', 'commits', str(float_dir[fm.now_at]), i))
-                                except:
-                                    pass
-                            fm.commit(commit_text, str(float_dir[fm.now_at]))
-                    contiune_command()
+                        
+
+                    # entry_str = simpledialog.askstring(
+                    #     title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
+                    # pattern1 = re.compile(r"'(\w+)'")
+                    # pattern2 = re.compile(r'"(\w+)"')
                 else:
                     terminal.insert('end', '\nerror:没有要提交的内容', 'red')
                     contiune_command()
