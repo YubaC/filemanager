@@ -2568,6 +2568,26 @@ def run_command(command, terminal, commandinput, fm):
                 if '-?' in command_inputed:
                     fm.help('add')
                 # terminal.insert('end', command)
+                elif '"' in command or "'" in command:
+                    all_text = command
+                    # print(all_text)
+                    # text1 = pattern1.findall(all_text)
+                    # text2 = pattern2.findall(all_text)
+                    file_name = ''
+                    text1 = all_text.split("\"")
+                    text2 = all_text.split("\'")
+                    if len(text1) <= 1 and len(text2) <= 1:
+                        terminal.insert('end', "\nerror:无效的文件名", 'red')
+                    elif len(text1) <= 1:
+                        file_name = text2[1]
+                    else:
+                        file_name = text1[1]
+
+                    if file_name != '':
+                        fm.add([os.path.join(fm.path_using, file_name)], command_inputed)
+                    else:
+                        terminal.insert('end', "\nerror:无效的文件名", 'red')
+
                 else:
                     fm.add([], command_inputed)
                 contiune_command()
@@ -2614,12 +2634,12 @@ def run_command(command, terminal, commandinput, fm):
                     fm.help('branch')
                 elif fm.inited:
                     # terminal.insert('end', command)
-                    if '-s' in command_inputed or len(command_inputed) == 1 or '-m' in command_inputed:
-                        if '-g' in command_inputed or '-m' in command_inputed or len(command_inputed) == 1:
-                            if '-m' in command_inputed:
-                                fm.now_at = int(
-                                    command_inputed[command_inputed.index('-m') + 1])
-                            fm.print_branch()
+                    # if '-s' in command_inputed or len(command_inputed) == 1 or '-m' in command_inputed:
+                    #     if '-g' in command_inputed or '-m' in command_inputed or len(command_inputed) == 1:
+                    #         if '-m' in command_inputed:
+                    #             fm.now_at = int(
+                    #                 command_inputed[command_inputed.index('-m') + 1])
+                    fm.print_branch()
                 else:
                     terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
 
@@ -2909,7 +2929,7 @@ def run_command_from_file(file_path, values = ''):
 
         else:
             # 替换i内所有的${{变量名}}为对应的变量内容
-            for cmd_line in locals().keys():
+            for cmd_line in list(locals().keys()):
                 # print(cmd_line)
                 cmd = cmd.replace('${0}'.format('{{' + cmd_line + '}}'), str(locals()[cmd_line]))
 
@@ -2922,8 +2942,6 @@ command_chosen = 0
 used_before_command = False
 
 # 按键盘上的↑时，将输入框的内容替换为上一次输入的内容，再按就是上上次输入的内容
-
-
 def commandup(inputen):
     # 如果上一次输入命令后还没有按过键盘的↑↓键
     global command_chosen, terminal_infos, used_before_command
