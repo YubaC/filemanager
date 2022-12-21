@@ -22,7 +22,7 @@ import hashlib
 # import win32api
 # import win32con
 import shutil
-# import threading
+import threading
 import need.printlogo as printlogo
 # import need.icon as icon
 
@@ -44,15 +44,16 @@ import tkinter as tk
 
 from tkinter import *
 from tkinter.ttk import *
-from tkinter import filedialog, Label, Radiobutton, simpledialog
+from tkinter import filedialog
+# from tkinter import filedialog, Label, Radiobutton, simpledialog
 
 import need.draw as draw
 
 import json
 
-from tkinter.messagebox import askokcancel
+# from tkinter.messagebox import askokcancel
 
-import windnd
+# import windnd
 
 # # 原文链接：https://blog.csdn.net/weixin_43849588/article/details/106911480
 # import ctypes
@@ -66,6 +67,8 @@ import windnd
 command_inputed = []
 asked_recommit = False
 commit_text = ''
+
+need_update= ''
 
 # 现在所在的路径（进入的路径）
 now_path = ''
@@ -84,7 +87,8 @@ else:
 
 
 class tk:
-    from tkinter import Tk, Entry, Toplevel, Listbox, Scrollbar
+    from tkinter import Tk, Entry, Toplevel, Listbox
+    # from tkinter import Tk, Entry, Toplevel, Listbox, Scrollbar
     from tkinter.scrolledtext import ScrolledText
 
 # 设置信息，可选
@@ -2406,13 +2410,15 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 
 
 def run_command(command, terminal, commandinput, fm):
-    global path_using, command_inputed,  now_path, start_path, commit_text, command_chosen, used_before_command, asked_recommit, commit_text
+    global path_using, command_inputed,  now_path, start_path, commit_text, command_chosen, used_before_command, asked_recommit, commit_text, need_update
 
     def contiune_command():
         terminal.insert('end', '\n')
         # # print(info_add)
         # # print(path_using + info_add)
         TerminalText.insert('end', path_using + fm.info_add + '\n', 'green')
+        if need_update:
+            TerminalText.insert('end', f'Warning:You are using FileManager v{terminal_infos.version}, however FileManager v{need_update} is available.\nYou should consider upgrading via the "update" command.' + '\n', 'yellow')
         terminal.insert('end', f'$ ')
         terminal.window_create('end', window=commandinput)
         commandinput.focus_set()  # """
@@ -2559,9 +2565,7 @@ def run_command(command, terminal, commandinput, fm):
                 elif not fm.process_path == {'changes': [], 'delete': [], 'create': []}:
                     # pattern1 = re.compile(r"'(\w+)'")
                     # pattern2 = re.compile(r'"(\w+)"')
-                    all_text = ''
-                    for i in command_inputed:
-                        all_text += i + ' '
+                    all_text = command
                     # print(all_text)
                     # text1 = pattern1.findall(all_text)
                     # text2 = pattern2.findall(all_text)
@@ -2715,9 +2719,7 @@ def run_command(command, terminal, commandinput, fm):
                         contiune_command()
                         asked_recommit = False
                     else:
-                        all_text = ''
-                        for i in command_inputed:
-                            all_text += i + ' '
+                        all_text = command
                         # print(all_text)
                         # text1 = pattern1.findall(all_text)
                         # text2 = pattern2.findall(all_text)
@@ -2737,14 +2739,20 @@ def run_command(command, terminal, commandinput, fm):
                             commandinput.focus_set()
                             asked_recommit = True
 
-                        
-
                     # entry_str = simpledialog.askstring(
                     #     title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
                     # pattern1 = re.compile(r"'(\w+)'")
                     # pattern2 = re.compile(r'"(\w+)"')
                 else:
                     terminal.insert('end', '\nerror:没有要提交的内容', 'red')
+                    contiune_command()
+
+            elif command_inputed[0] == 'update':
+                if need_update:
+                    os.system(os.path.join(start_path, 'goupdate.bat'))
+                    sys.exit(0)
+                else:
+                    terminal.insert('end', '\nerror:没有更新', 'red')
                     contiune_command()
 
             else:
@@ -2822,13 +2830,33 @@ def commanddown(inputen):
 #     f.write(terminal_infos.version)
 #     f.close()
 
+# print("start")
+# 检查更新
+def checkUpdate():
+    global need_update
+    # print("t1")
+    # need_update不为空时，说明有更新
+    need_update = os.popen(os.path.join(start_path, 'checkupdate.exe')).read()
+
+
+    # print(os.popen(os.path.join(start_path, 'updater.exe')).read())
+    # print(os.popen('updater.exe').read())
+# 启动线程
+t = threading.Thread(target=checkUpdate)
+t.setDaemon(True)
+t.start()
+
 
 # 创建窗口
 root = tk.Tk()
 # 设置标题
-root.title(f'FileManager(FM) {terminal_infos.version}')
+root.title(f'FileManager(FM) v{terminal_infos.version}')
 
-os.system(os.path.join(start_path, 'checkupdate.bat'))
+# print('done')
+# print("start")
+# print(os.popen(os.path.join(start_path, 'updater.py')).read())
+# print('done')
+# os.popen(os.path.join(start_path, 'checkupdate.bat'))
 
 # 设置图标(用这个方法是为了防止打包后找不到图标的)
 icon_for_window(root)
@@ -2858,7 +2886,7 @@ TerminalText.tag_config('yellow', foreground='#ffff7e',
 
 TerminalText['state'] = 'n'
 # TerminalText.insert('end',f'EasyTerminal {terminal_infos.version} By {terminal_infos.by}\n')
-TerminalText.insert('end', f'FileManager(FM) {terminal_infos.version}\n')
+TerminalText.insert('end', f'FileManager(FM) v{terminal_infos.version}\n')
 TerminalText.insert('end', 'Type "help" or "?" for help.\n')
 
 fm = FileManager(TerminalText)
