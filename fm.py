@@ -51,6 +51,8 @@ import need.draw as draw
 
 import json
 
+import traceback
+
 # from tkinter.messagebox import askokcancel
 
 # import windnd
@@ -68,7 +70,7 @@ command_inputed = []
 asked_recommit = False
 commit_text = ''
 
-need_update= ''
+need_update = ''
 
 # 现在所在的路径（进入的路径）
 now_path = ''
@@ -92,6 +94,8 @@ class tk:
     from tkinter.scrolledtext import ScrolledText
 
 # 设置信息，可选
+
+
 class terminal_infos:
     with open(os.path.join(start_path, 'version.txt'), 'r', encoding='utf-8') as f:
         version = f.read()
@@ -114,13 +118,15 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os.path import isfile,isdir,join
 
 # 进度展示
+
+
 class ShowProgress(object):
     def __init__(self, terminal, title):
         self.terminal = terminal
         self.title = title
         # self.max_value = max_value
-        terminal.insert('end','\n')
-    
+        terminal.insert('end', '\n')
+
     def update(self, now_value):
         terminal = self.terminal
         terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
@@ -128,6 +134,7 @@ class ShowProgress(object):
         # terminal.insert('end', f'\n{self.title}({now_value} of )......')
         terminal.update()
         terminal.see('end')
+
 
 class FileManager(object):
     def __init__(self, terminal):
@@ -209,7 +216,8 @@ class FileManager(object):
         path_using = self.path_using
 
         terminal = self.terminal
-        pb = ShowProgress(terminal, 'Calculating hash value({0[0]} of {0[1]})......')
+        pb = ShowProgress(
+            terminal, 'Calculating hash value({0[0]} of {0[1]})......')
 
         # 读取timestamp
         done = 0
@@ -235,7 +243,7 @@ class FileManager(object):
                 pass
         # top.destroy()
         pb.update([len(path_list), len(path_list)])
-        terminal.insert('end','Done.')
+        terminal.insert('end', 'Done.')
         terminal.update()
         with open(os.path.join(path_using, '.filemanager', 'main', 'timestamp.csv'), "w", encoding='utf-8') as p:
             for i in timestamp:
@@ -462,7 +470,8 @@ class FileManager(object):
         total_size = self.convertSize(self.all_size)
         terminal = self.terminal
 
-        pb = ShowProgress(terminal, 'Copying files({0[0]} of {0[1]} files, {0[2]} of {0[3]} in total)......')
+        pb = ShowProgress(
+            terminal, 'Copying files({0[0]} of {0[1]} files, {0[2]} of {0[3]} in total)......')
 
         # terminal.insert('end', f'\nCopying {self.all_number} files, total size {total_size}......\n')
         # terminal.update()
@@ -485,12 +494,13 @@ class FileManager(object):
                 # open(targetname,'wb').write(open(sourname,'rb').read())
 
                 done += 1
-                pb.update([done, self.all_number, self.convertSize(done_size+thisadd), total_size])
+                pb.update([done, self.all_number, self.convertSize(
+                    done_size+thisadd), total_size])
                 done_size += thisadd
 
         self.exit_flag = True
         pb.update([self.all_number, self.all_number, total_size, total_size])
-        terminal.insert('end','Done.')
+        terminal.insert('end', 'Done.')
         terminal.update()
         terminal.see('end')
 
@@ -511,7 +521,8 @@ class FileManager(object):
 
         # top = Toplevel()
         # top.title('Timestamping......')
-        pb = ShowProgress(terminal, 'Calculating timestamp value({0[0]} of {0[1]})......')
+        pb = ShowProgress(
+            terminal, 'Calculating timestamp value({0[0]} of {0[1]})......')
         # terminal.insert('end', f'\nCalculating timestamp value......(0 of {self.all_number})')
         # terminal.update()
         # terminal.see('end')
@@ -590,7 +601,7 @@ class FileManager(object):
                 self.all_size += os.path.getsize(
                     os.path.join(root, name))/1024
                 self.inited_all_number += 1
-        
+
         terminal.insert('end', 'Done.')
         terminal.update()
 
@@ -1156,9 +1167,8 @@ class FileManager(object):
             with open(os.path.join(path_in, '.filemanager', 'main', 'version.txt'), "w", encoding='utf-8') as f:
                 f.write(terminal_infos.version)
                 f.close()
-            
-            terminal.insert('end','\nDone.')
 
+            terminal.insert('end', '\nDone.')
 
     # 暂存/取消暂存的窗口
     # def adder(self, command):
@@ -1358,7 +1368,7 @@ class FileManager(object):
             terminal.insert('end', '\nerror:您还没有加载这个仓库', 'red')
 
     # Byte换KB、MB、GB
-    def convertSize(self,size):
+    def convertSize(self, size):
         # Byte直接返回
         if size < 1024:
             return str(size) + "B"
@@ -1423,11 +1433,12 @@ class FileManager(object):
 
         total_size = self.convertSize(commit_size)
         # terminal.insert('end', f'\nCommitting {commit_files_number} files, total size {total_size}......\n')
-        
+
         # terminal.update()
         # terminal.see('end')
 
-        pb = ShowProgress(terminal, 'Committing files({0[0]} of {0[1]} files, {0[2]} of {0[3]} in total)......')
+        pb = ShowProgress(
+            terminal, 'Committing files({0[0]} of {0[1]} files, {0[2]} of {0[3]} in total)......')
 
         passed_files = 0
         bytes_done = 0
@@ -1447,12 +1458,14 @@ class FileManager(object):
             passed_files += 1
             # pb["value"] += os.path.getsize(os.path.join(path_using, i))/1024
             # top.update()
-            pb.update([passed_files, commit_files_number, self.convertSize(bytes_done), total_size])
+            pb.update([passed_files, commit_files_number,
+                      self.convertSize(bytes_done), total_size])
             bytes_done += os.path.getsize(os.path.join(path_using, i))
 
         # terminal.delete(terminal.index('end-1c').split('.')[0]+'.0', 'end')
         # terminal.insert('end', f'\nCommitting files......({commit_files_number} of {commit_files_number} files, {total_size} of {total_size} in total)')
-        pb.update([commit_files_number, commit_files_number, total_size, total_size])
+        pb.update([commit_files_number, commit_files_number,
+                  total_size, total_size])
         terminal.insert('end', '\nDone.')
         terminal.update()
         # top.destroy()
@@ -1642,9 +1655,9 @@ class FileManager(object):
         self.print_branch()
         # self.printchanges(self.changes, terminal, '!destroy')
         self.printchanges()
-        
-    
+
     # 重提交
+
     def recommit(self, commit_text):
         if not commit_text == '':
             dirs = os.listdir(os.path.join(
@@ -1667,7 +1680,7 @@ class FileManager(object):
                 except:
                     pass
             self.commit(commit_text, str(float_dir[self.now_at]))
-                    # terminal.insert('end', "\n重提交成功", 'green')        
+            # terminal.insert('end', "\n重提交成功", 'green')
         # if self.changes == {'changes': [], 'delete': [], 'create': []}:
         #     if self.adder_opened:
         #         self.adder('!destroy')
@@ -2221,13 +2234,13 @@ class FileManager(object):
 
         # 删除文件
         pb = ShowProgress(terminal, 'Removing files({0[0]} of {0[1]})......')
-        pb.update([0,0])
+        pb.update([0, 0])
         done = 0
         for i in file_to_delete:
             if os.path.exists(os.path.join(path_using, i)):
                 try:
                     done += 1
-                    pb.update([done,len(file_to_delete)])
+                    pb.update([done, len(file_to_delete)])
 
                     os.remove(os.path.join(path_using, i))
                     if not os.listdir(os.path.dirname(os.path.join(path_using, i))):
@@ -2242,11 +2255,12 @@ class FileManager(object):
                     terminal.see('end')
 
         pb.update([len(file_to_delete), len(file_to_delete)])
-        terminal.insert('end','Done.')
+        terminal.insert('end', 'Done.')
         terminal.update()
 
         # 复制文件
-        pb = ShowProgress(terminal, 'Checking out files from your earlier commits......{0[0]} files have been checked out......')
+        pb = ShowProgress(
+            terminal, 'Checking out files from your earlier commits......{0[0]} files have been checked out......')
         pb.update([0])
         done = 0
         file_copy_dir = []
@@ -2282,7 +2296,7 @@ class FileManager(object):
                             terminal.update()
                             terminal.see('end')
         # if len(file_copy_dir) != 0:
-        terminal.insert('end','Done.')
+        terminal.insert('end', 'Done.')
         terminal.update()
 
         exit_flag = False
@@ -2418,7 +2432,8 @@ def run_command(command, terminal, commandinput, fm):
         # # print(path_using + info_add)
         TerminalText.insert('end', path_using + fm.info_add + '\n', 'green')
         if need_update:
-            TerminalText.insert('end', f'Warning:You are using FileManager v{terminal_infos.version}, however FileManager v{need_update} is available.\nYou should consider upgrading via the "update" command.' + '\n', 'yellow')
+            TerminalText.insert(
+                'end', f'Warning: You are using FileManager v{terminal_infos.version}, however FileManager v{need_update} is available.\nYou should consider upgrading via the "update" command.' + '\n', 'yellow')
         terminal.insert('end', f'$ ')
         terminal.window_create('end', window=commandinput)
         commandinput.focus_set()  # """
@@ -2532,7 +2547,7 @@ def run_command(command, terminal, commandinput, fm):
                                            'delete': [], 'create': []}
 
                     except OSError as error:
-                        terminal.insert('end', '\n'+error.args[1]+'\n', 'red')
+                        terminal.insert('end', '\nerror:'+error.args[1], 'red')
                     except:
                         terminal.insert('end', '\nerror:移动工作目录失败。\n', 'red')
 
@@ -2732,9 +2747,9 @@ def run_command(command, terminal, commandinput, fm):
                             commit_text = text2[1]
                         else:
                             commit_text = text1[1]
-                        
+
                         if commit_text != '':
-                            terminal.insert('end','\n为了确认，在下方输入"recommit"\n')
+                            terminal.insert('end', '\n为了确认，在下方输入"recommit"\n')
                             terminal.window_create('end', window=commandinput)
                             commandinput.focus_set()
                             asked_recommit = True
@@ -2755,13 +2770,58 @@ def run_command(command, terminal, commandinput, fm):
                     terminal.insert('end', '\nerror:没有更新', 'red')
                     contiune_command()
 
+            elif command_inputed[0] == "run":
+                # 如果len(command_inputed) == 1，说明没有输入文件名
+                if len(command_inputed) == 1:
+                    terminal.insert('end', '\nerror:没有输入文件名', 'red')
+                    contiune_command()
+                else:
+                    # 判断文件是否存在
+                    os.chdir(path_using)
+                    if os.path.exists(command_inputed[1]):
+                        contiune_command()
+                        # 如果command字符串里存在--values参数，则提取--values:后面的引号里值
+                        if '--values' in command:
+                            pattern = re.compile(r'--values:(.*)')
+                            values = pattern.findall(command)
+                            if len(values) == 1:
+                                # 如果有值，就用这个值替换掉values.txt
+                                value = '{' + values[0] +'}'
+                                contiune_command()
+                                try:
+                                    run_command_from_file(command_inputed[1], values=value)
+                                except Exception as e:
+                                    terminal.insert('end', traceback.format_exc(), 'red')
+                                    terminal.insert('end', f'\nerror:{e}', 'red')
+                                    contiune_command()
+
+                            else:
+                                terminal.insert('end', '\nerror:只能有一个参数"values"', 'red')
+                                contiune_command()
+                        else:
+                            contiune_command()
+                            try:
+                                run_command_from_file(command_inputed[1])
+                            except Exception as e:
+                                terminal.insert('end', traceback.format_exc(), 'red')
+                                terminal.insert('end', f'\nerror:{e}', 'red')
+                                contiune_command()
+                    else:
+                        terminal.insert('end', '\nerror:文件不存在', 'red')
+                        contiune_command()
+                os.chdir(start_path)
+
+            elif command_inputed[0] == "exit":
+                sys.exit(0)
+
             else:
                 # terminal.insert('end', command)
                 terminal.insert('end', '\nerror:未知的命令', 'red')
                 contiune_command()
 
     except Exception as e:
-        terminal.insert('end', e, 'red')
+        terminal.insert('end', traceback.format_exc(), 'red')
+        terminal.insert('end', f'\nerror:{e}', 'red')
         contiune_command()
 
     terminal.config(state='d')
@@ -2796,10 +2856,74 @@ def post_inputlist(inputen):
     for temp in terminal_infos.input_list:
         commandlist.insert('end', f'{temp}')
 
+# 读取*.fmc文件，执行其中的命令
+def run_command_from_file(file_path, values = ''):
+    global path_using, start_path, command_input, TerminalText, command_input, fm
+    work_dir = path_using
+    start_dir = start_path
+
+    if values != '':
+        # 将'xx':'xxx'更改为"xx":"xxx"
+        values = re.sub(r"'(.*?)':'(.*?)'", r'"\1":"\2"', values)
+
+        values = values.replace("\\","/")
+        # values = re.findall(, values)
+        # 使用json解析value的字符串
+        values = json.loads(values)
+        # 将value的内容倒入locals()
+        for key in values.keys():
+            locals()[key] = values[key]
+
+    os.chdir(path_using)
+    command_file = open(file_path, 'r', encoding='utf-8')
+    commands = command_file.read().splitlines()
+    command_file.close()
+    os.chdir(start_path)
+
+    for cmd in commands:
+        # 如果是空行，就跳过
+        # 如果以//开头，就跳过
+        if cmd == '' or cmd.startswith('//'):
+            pass
+        # 如果以exec"""开头，就执行exec后面数行的内容直到结尾的"""
+
+        elif cmd.startswith('exec"""'):
+            # 读取exec后面的内容
+            exec_content = []
+            for cmd_line in range(commands.index(cmd) + 1, len(commands)):
+            # for j in commands[commands.index(i)+1:]:
+                if commands[cmd_line] == '"""':
+                    # 从commands里删除commands.index(i)到j的内容
+                    del commands[commands.index(cmd):cmd_line]
+                    break
+                elif commands[cmd_line] != '':
+                    exec_content.append(commands[cmd_line])
+
+            all_command = ''
+            # 执行exec后面的内容
+            all_command = '\n'.join(exec_content)
+                # print(j)
+            command_to_run = compile(all_command,'abc','exec')
+            eval(command_to_run)
+            # print(commands)
+
+        else:
+            # 替换i内所有的${{变量名}}为对应的变量内容
+            for cmd_line in locals().keys():
+                # print(cmd_line)
+                cmd = cmd.replace('${0}'.format('{{' + cmd_line + '}}'), str(locals()[cmd_line]))
+
+            command_input.delete(0, 'end')
+            command_input.insert('end', cmd)
+            run_command(command_input.get(), TerminalText, command_input, fm)
+
+
 command_chosen = 0
 used_before_command = False
 
 # 按键盘上的↑时，将输入框的内容替换为上一次输入的内容，再按就是上上次输入的内容
+
+
 def commandup(inputen):
     # 如果上一次输入命令后还没有按过键盘的↑↓键
     global command_chosen, terminal_infos, used_before_command
@@ -2811,6 +2935,7 @@ def commandup(inputen):
         command_chosen = len(terminal_infos.input_list) - 1
     inputen.delete(0, 'end')
     inputen.insert('end', terminal_infos.input_list[command_chosen])
+
 
 def commanddown(inputen):
     global command_chosen, terminal_infos, used_before_command
@@ -2832,12 +2957,13 @@ def commanddown(inputen):
 
 # print("start")
 # 检查更新
+
+
 def checkUpdate():
     global need_update
     # print("t1")
     # need_update不为空时，说明有更新
     need_update = os.popen(os.path.join(start_path, 'checkupdate.exe')).read()
-
 
     # print(os.popen(os.path.join(start_path, 'updater.exe')).read())
     # print(os.popen('updater.exe').read())
@@ -2845,7 +2971,6 @@ def checkUpdate():
 t = threading.Thread(target=checkUpdate)
 t.setDaemon(True)
 t.start()
-
 
 # 创建窗口
 root = tk.Tk()
@@ -2924,6 +3049,14 @@ TerminalText['state'] = 'd'
 def click(event):
     command_input.focus_set()
 
+# 说明有参数
+if len(sys.argv) > 1:
+    # 将sys.argv第二位到最后一位的参数合并为一个字符串
+    command = ' '.join(sys.argv[1:])
+    # 传入参数
+    command_input.insert('end', command)
+    # 执行命令
+    run_command(command_input.get(), TerminalText, command_input, fm)
 
 # focus
 root.bind("<Double-Button-1>", click)
