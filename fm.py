@@ -1109,7 +1109,7 @@ class FileManager(object):
                 f.write('del /S /Q hide.bat')
                 f.close()
             os.chdir(path_using)
-            os.system(f'{os.getcwd()}\\hide.bat')
+            os.system(f'"{os.getcwd()}\\hide.bat"')
             os.chdir(self.start_path)
 
             all_size = 0
@@ -2433,7 +2433,7 @@ def run_command(command, terminal, commandinput, fm):
         TerminalText.insert('end', path_using + fm.info_add + '\n', 'green')
         if need_update:
             TerminalText.insert(
-                'end', f'Warning: You are using FileManager v{terminal_infos.version}, however FileManager v{need_update} is available.\nYou should consider upgrading via the "update" command.' + '\n', 'yellow')
+                'end', f'Warning: You are using FileManager v{terminal_infos.version}, however FileManager v{need_update} is available.You should consider upgrading via the "update" command.' + '\n', 'yellow')
         terminal.insert('end', f'$ ')
         terminal.window_create('end', window=commandinput)
         commandinput.focus_set()  # """
@@ -2477,10 +2477,10 @@ def run_command(command, terminal, commandinput, fm):
             # pattern2 = re.compile(r"'(\w+)'")
             # pth1=pattern1.findall(command_inputed)
             # pth2=pattern2.findall(command_inputed)
-            if ',' in command_inputed:
-                command_inputed = command_inputed.split(',')
-            else:
-                command_inputed = command_inputed.split()
+            # if ',' in command_inputed:
+            #     command_inputed = command_inputed.split(',')
+            # else:
+            command_inputed = command_inputed.split()
 
             if command_inputed[0] == "?" or command_inputed[0] == "help":
                 if len(command_inputed) > 1:
@@ -2533,24 +2533,46 @@ def run_command(command, terminal, commandinput, fm):
                 elif '-?' in command_inputed:
                     fm.help('cd')
                 else:
-                    # terminal.insert('end', command)
-                    try:
-                        os.chdir(path_using)
-                        os.chdir(command_inputed[1])
-                        path_using = now_path = os.getcwd()
-                        os.chdir(start_path)
-                        fm.inited = False
-                        fm.info_add = ''
-                        fm.changes = {'changes': [],
-                                      'delete': [], 'create': []}
-                        fm.process_path = {'changes': [],
-                                           'delete': [], 'create': []}
+                    new_path = ''
+                    # 如果len(command_inputed) > 2, 则有可能是路径中存在空格
+                    # 这时尝试提取引号内的内容
+                    if len(command_inputed) == 2:
+                        new_path = command_inputed[1]
+                    elif '"' in command or "'" in command:
+                        all_text = command
+                        # print(all_text)
+                        # text1 = pattern1.findall(all_text)
+                        # text2 = pattern2.findall(all_text)
+                        text1 = all_text.split("\"")
+                        text2 = all_text.split("\'")
+                        if len(text1) <= 1 and len(text2) <= 1:
+                            terminal.insert('end', "\nerror:无效的文件名", 'red')
+                        elif len(text1) <= 1:
+                            new_path = text2[1]
+                        else:
+                            new_path = text1[1]
+                        
+                    if new_path != '':
+                        try:
+                            os.chdir(path_using)
+                            os.chdir(new_path)
+                            path_using = now_path = os.getcwd()
+                            os.chdir(start_path)
+                            fm.inited = False
+                            fm.info_add = ''
+                            fm.changes = {'changes': [],
+                                        'delete': [], 'create': []}
+                            fm.process_path = {'changes': [],
+                                            'delete': [], 'create': []}
 
-                    except OSError as error:
-                        terminal.insert('end', '\nerror:'+error.args[1], 'red')
-                    except:
-                        terminal.insert('end', '\nerror:移动工作目录失败。\n', 'red')
-
+                        except OSError as error:
+                            terminal.insert('end', '\nerror:'+error.args[1], 'red')
+                        except:
+                            terminal.insert('end', '\nerror:移动工作目录失败。', 'red')
+                    else:
+                        terminal.insert('end', '\nerror:无效的工作目录。', 'red')
+                        terminal.insert('end', "\nWarning:这个错误可能是您的工作目录的路境内存在空格所致。请使用引号以解决此问题。", 'yellow')
+                
                 contiune_command()
 
             elif command_inputed[0] == 'refresh':
@@ -2701,7 +2723,7 @@ def run_command(command, terminal, commandinput, fm):
                             if not os.path.exists(os.path.join(path_using, '.ignore')):
                                 with open(os.path.join(path_using, '.ignore'), 'w', encoding='utf-8') as f:
                                     f.write(
-                                        '# Please write down the path you want to ignore below：')
+                                        '# Please write down paths and files you want to ignore below：')
                                     f.close()
                                 terminal.insert(
                                     'end', '\n在{0}目录下创建了.ignore文件'.format(path_using))
@@ -2898,6 +2920,10 @@ def run_command_from_file(file_path, values = ''):
     command_file = open(file_path, 'r', encoding='utf-8')
     commands = command_file.read().splitlines()
     command_file.close()
+    if commands[0].startswith("\ufeff"):
+        command_file = open(file_path, 'r', encoding='utf-8-sig')
+        commands = command_file.read().splitlines()
+        command_file.close()
     os.chdir(start_path)
 
     for cmd in commands:
@@ -2959,7 +2985,7 @@ def commanddown(inputen):
     global command_chosen, terminal_infos, used_before_command
     if not used_before_command:
         used_before_command = True
-        command_chosen = len(terminal_infos.input_list) - 1
+        command_chosen = 0
     elif len(terminal_infos.input_list) - 1 > command_chosen:
         command_chosen += 1
     else:
