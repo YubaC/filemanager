@@ -152,7 +152,8 @@ def draw(tree_input, now_at):
     for i in tree_input:
         if i['end'] != -1:
             end_end = i['end'] * 2
-            end_start = end_end - 2
+            end_start = list(i['include'].keys())[len(i['include'])-1] * 2
+            # end_start = end_end - 2
 
             for j in range(len(out[end_start])):
                 if out[end_start][j] == '*':
@@ -164,35 +165,62 @@ def draw(tree_input, now_at):
             temp1 = list(out[end_start + 1])
             temp2 = list(out[end_end])
 
-            if end_start_position > end_end_position:
-                temp1[end_start_position] = '│'
-                temp2[end_start_position] = '┘'
-                temp2[end_end_position+1] = '←'
-                # if end_start_position - end_end_position == 2:
-                for i in range(end_end_position + 1, end_start_position):
-                    if temp2[i] != '│' and temp2[i] != '┘' and temp2[i] != '←':
-                        temp2[i] = '─'
-                # else:
-                #     for i in range(end_end_position + 1, end_start_position - 1):
-                #         if temp2[i] != '│':
-                #             temp2[i] = '─'
+            # 如果是要合并的分支最后一个的编号大于这个分支的最后一个的编号且相距为2
+            if end_end - end_start == 2:
+                if end_start_position > end_end_position:
+                    temp1[end_start_position] = '│'
+                    temp2[end_start_position] = '┘'
+                    temp2[end_end_position+1] = '←'
+                    # if end_start_position - end_end_position == 2:
+                    for i in range(end_end_position + 1, end_start_position):
+                        if temp2[i] != '│' and temp2[i] != '┘' and temp2[i] != '←':
+                            temp2[i] = '─'
+                    # else:
+                    #     for i in range(end_end_position + 1, end_start_position - 1):
+                    #         if temp2[i] != '│':
+                    #             temp2[i] = '─'
+                else:
+                    temp1[end_start_position] = '│'
+                    temp2[end_start_position] = '└'
+                    temp2[end_end_position-1] = '→'
+                    # if end_end_position - end_start_position == 2:
+                    for i in range(end_start_position+1,end_end_position):
+                        if temp2[i] != '│' and temp2[i] != '└' and temp2[i] != '→':
+                            temp2[i] = '─'
+
+                out[end_start + 1] = ''.join(temp1)
+                out[end_end] = ''.join(temp2)
+                    # else:
+                    #     for i in range(end_start_position+1,end_end_position-1):
+                    #         if temp2[i] != '│':
+                    #             temp2[i] = '─'
             else:
-                temp1[end_start_position] = '│'
-                temp2[end_start_position] = '└'
-                temp2[end_end_position-1] = '→'
-                # if end_end_position - end_start_position == 2:
-                for i in range(end_start_position+1,end_end_position):
-                    if temp2[i] != '│' and temp2[i] != '└' and temp2[i] != '→':
-                        temp2[i] = '─'
-                # else:
-                #     for i in range(end_start_position+1,end_end_position-1):
-                #         if temp2[i] != '│':
-                #             temp2[i] = '─'
+                for i in range(end_start, end_end):
+                    temp_ = list(out[i])
+                    temp_[end_start_position] = '│'
+                    out[i] = ''.join(temp_)
 
-            
+                temp1 = list(out[end_end])
+                if end_start_position > end_end_position:
+                    temp1[end_start_position] = '┘'
+                    temp1[end_end_position+1] = '←'
+                    # if end_start_position - end_end_position == 2:
+                    for i in range(end_end_position + 1, end_start_position):
+                        if temp1[i] != '│' and temp1[i] != '┘' and temp1[i] != '←':
+                            temp1[i] = '─'
+                else:
+                    temp1[end_start_position] = '└'
+                    temp1[end_end_position-1] = '→'
+                    # if end_end_position - end_start_position == 2:
+                    for i in range(end_start_position+1,end_end_position):
+                        if temp1[i] != '│' and temp1[i] != '└' and temp1[i] != '→':
+                            temp1[i] = '─'
 
-            out[end_start + 1] = ''.join(temp1)
-            out[end_end] = ''.join(temp2)
+                out[end_end] = ''.join(temp1)
+                    # else:
+                    #     for i in range(end_end_position + 1, end_start_position - 1):
+                    #         if temp1[i] != '│':
+                    #             temp1[i] = '─'
     
 
     # # 上色
@@ -249,7 +277,7 @@ def draw(tree_input, now_at):
 if __name__ == '__main__':
     branch1 = {'start': -1, 'include': {0: 'a', 1: 'b', 6: 'g'}, 'end': -1, 'level': 0}
     branch2 = {'start': 1, 'include': {2: 'c', 3: 'd'}, 'end': -1, 'level': 1}
-    branch3 = {'start': 1, 'include': {4: 'e', 5: 'f'}, 'end': 6, 'level': 1}
+    branch3 = {'start': 1, 'include': {4: 'e', 5: 'f'}, 'end': 10, 'level': 1}
     branch4 = {'start': 2, 'include': {7: 'e', 8: 'f'}, 'end': 9, 'level': 2}
     branch5={'start':1,'include':{9:'e',10:'f'},'end':-1,'level':2}
     branch = [branch1, branch2, branch3, branch4, branch5]
