@@ -1778,19 +1778,20 @@ class FileManager(object):
         draw_branch = draw.draw(branch, self.now_at)
 
         colors = ['red', 'green', 'blue', 'cyan', 'yellow']
+        marks = [ '─', '┐', '┬', '└', '┘', '←', '→']
         k = {}
         for i in draw_branch:
             terminal.insert('end', '\n')
             # line:color
             for j in range(len(i)):
-                if i[j] == "|":
+                if i[j] == "│":
                     if not j in list(k.keys()):
                         l = len(k)
                         while l >= len(colors):
                             l -= len(colors)
                         k[j] = l
                     terminal.insert('end', i[j], colors[k[j]])
-                elif i[j] == '-' or i[j] == '\\' or i[j] == '/' or i[j] == '+':
+                elif i[j] in marks:
                     terminal.insert('end', i[j], 'slategray')
                 
                 # --------------------------
@@ -1835,6 +1836,7 @@ class FileManager(object):
             self.inputen.insert('end', 'show detailedCommitText ' + id)
             self.inputen.focus_set()
             self.terminal.see('end')
+            self.terminal.bind('<ButtonRelease-1>', lambda v=0: self.callback())
         self.terminal.bind('<ButtonRelease-1>', lambda v=0: onMouseUp())
 
 # 创建打开文件函数，并按换行符分割内容
@@ -2575,7 +2577,7 @@ class FileManager(object):
         tkwindow.iconbitmap(default=temofilename)
 
     # def merge(merge_branch,merge_text):
-    #     d
+        
 
 
 # 新建函数以便将图标载入窗口中
@@ -3215,9 +3217,9 @@ def checkUpdate():
     # print(os.popen(os.path.join(start_path, 'updater.exe')).read())
     # print(os.popen('updater.exe').read())
 # 启动线程
-t = threading.Thread(target=checkUpdate)
-t.setDaemon(True)
-t.start()
+checkupdate = threading.Thread(target=checkUpdate)
+checkupdate.setDaemon(True)
+checkupdate.start()
 
 # 创建窗口
 root = tk.Tk()

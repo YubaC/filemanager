@@ -66,7 +66,7 @@ def draw(tree_input, now_at):
         for j in range(star_start_position,star_end_position):
             if not out[j][i] == '*':
                 temp_list = list(out[j])
-                temp_list[i] = '|'
+                temp_list[i] = '│'
                 out[j] = ''.join(temp_list)
 
     # 画-
@@ -93,35 +93,43 @@ def draw(tree_input, now_at):
             target_arrange = i * 2
             temp_list = list(out[star_line])
             for j in range(star_arrange + 1, target_arrange):
-                if temp_list[j] != '+':
-                    temp_list[j] = '-'
-            temp_list[target_arrange-1] = '+'
+                if temp_list[j] != '┐' and temp_list[j] != '┬' and temp_list[j] != '→':
+                    temp_list[j] = '─'
+                elif temp_list[j] == '┐':
+                    temp_list[j] = '┬'
+            temp_list[target_arrange] = '┐'
+            if temp_list[target_arrange-1] != '*':
+                temp_list[target_arrange-1] = '→'
             out[star_line] = ''.join(temp_list)
 
     draw_starts = []
 
-    # +下画\
+    # ┬、┐下画|
     for i in range(len(out)):
-        if '+' in out[i]:
+        # 因为有┐一定有┬，所以只判断┐
+        if '┐' in out[i]:
             if not i + 1 >= len(out):
                 temp_list = list(out[i+1])
                 for j in range(len(out[i])):
-                    if out[i][j] == '+':
-                        if j + 2 <= len(out[i]) and i + 2 <= len(out) and out[i+2][j+2] == '+':
-                            temp_list2 = list(out[i])
-                            temp_list2[j] = '-'
-                            temp_list2[j+1] = '+'
-                            temp_list[j+2] = '&'
-                            out[i] = ''.join(temp_list2)
-                            draw_starts.append([i+1,j+1])
-                            # pass
-                        else:
-                # add_arrange = out[i].index('+')
-                            if temp_list[j + 1] != '&':
-                                temp_list[j + 1] = '\\'
-                            else:
-                                temp_list[j + 1] = ' '
-                            draw_starts.append([i+2,j+1])
+                    if out[i][j] == '┐' or out[i][j] == '┬':
+                        temp_list[j] = '│'
+                        draw_starts.append([i+1,j])
+
+                #         if j + 2 <= len(out[i]) and i + 2 <= len(out) and out[i+2][j+2] == '+':
+                #             temp_list2 = list(out[i])
+                #             temp_list2[j] = '─'
+                #             temp_list2[j+1] = '+'
+                #             temp_list[j+2] = '&'
+                #             out[i] = ''.join(temp_list2)
+                #             draw_starts.append([i+1,j+1])
+                #             # pass
+                #         else:
+                # # add_arrange = out[i].index('+')
+                #             if temp_list[j + 1] != '&':
+                #                 temp_list[j + 1] = '\\'
+                #             else:
+                #                 temp_list[j + 1] = ' '
+                #             draw_starts.append([i+2,j+1])
                 out[i+1] = ''.join(temp_list)
 
     # 补全|
@@ -137,7 +145,7 @@ def draw(tree_input, now_at):
         for j in range(star_start_position,star_end_position):
             if not out[j][i] == '*':
                 temp_list = list(out[j])
-                temp_list[i] = '|'
+                temp_list[i] = '│'
                 out[j] = ''.join(temp_list)
 
     # 合并
@@ -157,25 +165,29 @@ def draw(tree_input, now_at):
             temp2 = list(out[end_end])
 
             if end_start_position > end_end_position:
-                temp1[end_start_position] = '/'
-                if end_start_position - end_end_position == 2:
-                    for i in range(end_end_position + 1, end_start_position):
-                        if temp2[i] != '|':
-                            temp2[i] = '-'
-                else:
-                    for i in range(end_end_position + 1, end_start_position - 1):
-                        if temp2[i] != '|':
-                            temp2[i] = '-'
+                temp1[end_start_position] = '│'
+                temp2[end_start_position] = '┘'
+                temp2[end_end_position+1] = '←'
+                # if end_start_position - end_end_position == 2:
+                for i in range(end_end_position + 1, end_start_position):
+                    if temp2[i] != '│' and temp2[i] != '┘' and temp2[i] != '←':
+                        temp2[i] = '─'
+                # else:
+                #     for i in range(end_end_position + 1, end_start_position - 1):
+                #         if temp2[i] != '│':
+                #             temp2[i] = '─'
             else:
-                temp1[end_start_position] = '\\'
-                if end_end_position - end_start_position == 2:
-                    for i in range(end_start_position+1,end_end_position):
-                        if temp2[i] != '|':
-                            temp2[i] = '-'
-                else:
-                    for i in range(end_start_position+1,end_end_position-1):
-                        if temp2[i] != '|':
-                            temp2[i] = '-'
+                temp1[end_start_position] = '│'
+                temp2[end_start_position] = '└'
+                temp2[end_end_position-1] = '→'
+                # if end_end_position - end_start_position == 2:
+                for i in range(end_start_position+1,end_end_position):
+                    if temp2[i] != '│' and temp2[i] != '└' and temp2[i] != '→':
+                        temp2[i] = '─'
+                # else:
+                #     for i in range(end_start_position+1,end_end_position-1):
+                #         if temp2[i] != '│':
+                #             temp2[i] = '─'
 
             
 
@@ -201,7 +213,7 @@ def draw(tree_input, now_at):
     #     if color >= len(colors) - 1:
     #         color = 0
     #     for j in range(len(out)):
-    #         if out[j][i] == '|':
+    #         if out[j][i] == '│':
     #             # temp_list = list(out[j])
     #             # temp_list[i] = colors[color]
     #             # # out[j] = ''.join(temp_list)
@@ -234,11 +246,11 @@ def draw(tree_input, now_at):
     # console=Console()
     # for i in out:
     #     console.print('  '+i)
-
-# branch1 = {'start': -1, 'include': {0: 'a', 1: 'b', 6: 'g'}, 'end': -1, 'level': 0}
-# branch2 = {'start': 1, 'include': {2: 'c', 3: 'd'}, 'end': -1, 'level': 1}
-# branch3 = {'start': 1, 'include': {4: 'e', 5: 'f'}, 'end': 6, 'level': 1}
-# branch4 = {'start': 2, 'include': {7: 'e', 8: 'f'}, 'end': 9, 'level': 2}
-# branch5={'start':1,'include':{9:'e',10:'f'},'end':-1,'level':2}
-# branch = [branch1, branch2, branch3, branch4, branch5]
-# draw(branch, 0)
+if __name__ == '__main__':
+    branch1 = {'start': -1, 'include': {0: 'a', 1: 'b', 6: 'g'}, 'end': -1, 'level': 0}
+    branch2 = {'start': 1, 'include': {2: 'c', 3: 'd'}, 'end': -1, 'level': 1}
+    branch3 = {'start': 1, 'include': {4: 'e', 5: 'f'}, 'end': 6, 'level': 1}
+    branch4 = {'start': 2, 'include': {7: 'e', 8: 'f'}, 'end': 9, 'level': 2}
+    branch5={'start':1,'include':{9:'e',10:'f'},'end':-1,'level':2}
+    branch = [branch1, branch2, branch3, branch4, branch5]
+    print(draw(branch, 0))
