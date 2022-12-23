@@ -137,8 +137,9 @@ class ShowProgress(object):
 
 
 class FileManager(object):
-    def __init__(self, terminal):
+    def __init__(self, terminal, command_input):
         self.terminal = terminal
+        self.inputen = command_input
 
         self.start_path = ""
         self.path_using = ""
@@ -1383,7 +1384,7 @@ class FileManager(object):
             return str(round(size / (1024 * 1024 * 1024), 2)) + "GB"
 
     # 提交
-    def commit(self, commit_text, str_timestamp_in):
+    def commit(self, commit_text, str_timestamp_in, attach=False):
         terminal = self.terminal
         # # print(self.changes['delete'])
         # # print('True')
@@ -1400,6 +1401,16 @@ class FileManager(object):
         terminal.insert('end', '\nChecking Files......')
         terminal.see('end')
         terminal.update()
+
+        # 如果有附件的话就读取附件
+        if attach:
+            attach_file = ''
+            attach_file = filedialog.askopenfilename(initialdir=path_using)
+            if attach_file != '' and not self.is_binary_file(attach_file):
+                with open(attach_file, 'r', encoding='utf-8') as f:
+                    attach_text = f.read()
+                    f.close()
+                commit_text ='#' + commit_text
 
         # 计算提交的文件的大小
         for i in self.process_path['changes']:
@@ -1555,6 +1566,11 @@ class FileManager(object):
                 for i in self.process_path['create']:
                     f.write(i + '\n')
                 f.close()
+            
+            if attach:
+                with open(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'README.md'), 'w', encoding='utf-8') as f:
+                    f.write(attach_text)
+                    f.close()
 
             # 提交timestamp.csv
             # if os.path.exists(os.path.join(path_using, '.filemanager', 'main', 'commits', str_timestamp, 'create')):
@@ -1658,7 +1674,7 @@ class FileManager(object):
 
     # 重提交
 
-    def recommit(self, commit_text):
+    def recommit(self, commit_text, attach=False):
         if not commit_text == '':
             dirs = os.listdir(os.path.join(
                 path_using, '.filemanager', 'commits'))
@@ -1679,171 +1695,7 @@ class FileManager(object):
                         path_using, '.filemanager', 'commits', str(float_dir[self.now_at]), i))
                 except:
                     pass
-            self.commit(commit_text, str(float_dir[self.now_at]))
-            # terminal.insert('end', "\n重提交成功", 'green')
-        # if self.changes == {'changes': [], 'delete': [], 'create': []}:
-        #     if self.adder_opened:
-        #         self.adder('!destroy')
-        # else:
-        #     # self.printchanges(self.changes, terminal, 'changes')
-        #     self.printchanges()
-
-    # def show_changes_in_box(self, inputen, mode):
-    #     terminal = self.terminal
-    #     path_using = self.path_using
-    #     window_opened = self.window_opened
-    #     global  postwin, processlist, changeslist
-    #     v = StringVar()
-    #     v2 = StringVar()
-
-    #     def delete():
-    #         global command_inputed, self.deletes
-    #         items = list(map(int, processlist.curselection()))
-    #         if(len(items) == 0):
-    #             # print("No items")
-    #             pass
-    #         else:
-    #             # print(items)
-    #             before_delete = set(eval(v2.get()))
-    #             for i in items:
-    #                 processlist.delete(i)
-    #                 for j in range(len(items)):
-    #                     items[j] -= 1
-
-    #             # # print(v.get())
-
-    #             after_delete = set(eval(v2.get()))
-
-    #             for i in list(before_delete - after_delete):
-    #                 self.deletes.append(os.path.join(path_using, i))
-
-    #             # print(self.deletes)
-    #             command_inputed = []
-    #             command_inputed.append('add')
-    #             command_inputed.append('-f')
-    #             command_inputed.append('+')
-    #             adds = []
-    #             for i in list(after_delete):
-    #                 adds.append((os.path.join(path_using, i)))
-    #             if adds != []:
-    #                 add(terminal, adds, command_inputed)
-    #                 command_inputed = []
-    #                 command_inputed.append('add')
-    #                 command_inputed.append('-f')
-    #                 command_inputed.append('-')
-    #                 add(terminal, self.deletes, command_inputed)
-    #                 self.deletes = []
-    #             else:
-    #                 command_inputed[2] = '+'
-    #                 add(inputen, [], command_inputed)
-
-    #     def add_():
-    #         global command_inputed, self.deletes
-    #         items = list(map(int, changeslist.curselection()))
-
-    #         if(len(items) == 0):
-    #             # print("No items")
-    #             pass
-    #         else:
-    #             # print(items)
-    #             lists = list(eval(v.get()))
-    #             exists = list(eval(v2.get()))
-
-    #             for i in items:
-    #                 if not lists[i] in exists:
-    #                     processlist.insert('end', lists[i])
-
-    #     def close():
-    #         global window_opened
-    #         window_opened = False
-    #         postwin.destroy()
-
-    #         # # print(list(eval(v.get())))
-    #     # 弹出效果展示中的命令列表
-    #     if not window_opened:
-    #         window_opened = True
-    #         postwin = tk.Toplevel(root)
-    #         icon_for_window(postwin)
-    #         postwin.title('ChangesList')
-    #         postwin.geometry('650x400')
-    #         postwin.transient(root)
-    #         postwin.protocol('WM_DELETE_WINDOW', close)
-
-    #     #     TerminalText = tk.ScrolledText(root, state='d', fg='white', bg='black', insertbackground='white', font=(
-    #     #     'consolas', 13), selectforeground='black', selectbackground='white', takefocus=False)
-    #     # TerminalText.pack(fill='both', expand='yes')
-
-    #         changeslist = tk.Listbox(postwin)
-    #         yscrollbar = tk.Scrollbar(changeslist)
-
-    #         changeslist.config(yscrollcommand=yscrollbar.set, fg='#ffffff', selectforeground='black',
-    #                         selectbackground='#ffffff', bg='#000000', font=('terminal', 16), selectmode='multiple', listvariable=v)
-
-    #         yscrollbar.config(command=changeslist.yview)
-
-    #         yscrollbar.pack(side=RIGHT, fill=Y)
-    #         changeslist.config(yscrollcommand=yscrollbar.set)
-    #     # 原文链接：https://blog.csdn.net/qq_38002337/article/details/81475466
-
-    #         # 让Listbox最大占据postwin的控件
-    #         changeslist.pack(fill='both', expand=1)
-
-    #         # 给Listbox插入已经输入的内容
-
-    #         for temp in inputen:
-    #             changeslist.insert('end', f'{temp}')
-
-    #         processlist = tk.Listbox(postwin)
-    #         yscrollbar2 = tk.Scrollbar(processlist)
-
-    #         processlist.config(yscrollcommand=yscrollbar2.set, fg='#ffffff', selectforeground='black',
-    #                         selectbackground='#ffffff', bg='#000000', font=('terminal', 16), selectmode='multiple', listvariable=v2)
-
-    #         yscrollbar2.config(command=processlist.yview)
-
-    #         yscrollbar2.pack(side=RIGHT, fill=Y)
-    #         processlist.config(yscrollcommand=yscrollbar2.set)
-    #     # 原文链接：https://blog.csdn.net/qq_38002337/article/details/81475466
-
-    #         # 让Listbox最大占据postwin的控件
-    #         # processlist.pack(fill='both', expand=1)
-    #         processlist.pack(fill='both', expand=1)
-
-    #         # 给Listbox插入已经输入的内容
-    #         # if inputen[0] == '!destroy':
-    #         #     postwin.destroy()
-    #         for temp in inputen:
-    #             processlist.insert('end', f'{temp}')
-
-    #         deleter = Button(postwin, text="删除", command=delete)
-    #         adder = Button(postwin, text="添加", command=add_)
-    #         # theButton = Button(master, text="删除", command=lambda x=listbox: x.delete("active"))
-    #         deleter.pack(side=LEFT)
-    #         adder.pack(side=RIGHT)
-
-    #         # 缓存文件
-    #         command_inputed = []
-    #         command_inputed.append('add')
-    #         command_inputed.append('.')
-    #         add(terminal, [], command_inputed)
-
-    #     else:
-    #         if self.mode == '!destroy':
-    #             postwin.destroy()
-    #             window_opened = False
-    #         else:
-    #             if self.mode == 'changes':
-    #                 changeslist.delete(0, 'end')
-    #                 for i in self.changes['changes']:
-    #                     changeslist.insert('end', f'{i}')
-    #                 for i in self.changes['delete']:
-    #                     changeslist.insert('end', f'{i}')
-    #                 for i in self.changes['create']:
-    #                     changeslist.insert('end', f'{i}')
-    #             processlist.delete(0, 'end')
-    #             for temp in inputen:
-    #                 processlist.insert('end', f'{temp}')
-    #         # commandlist.delete('1.0', END)
+            self.commit(commit_text, str(float_dir[self.now_at]), attach)
 
     def printchanges(self):
         terminal = self.terminal
@@ -1940,46 +1792,370 @@ class FileManager(object):
                     terminal.insert('end', i[j], colors[k[j]])
                 elif i[j] == '-' or i[j] == '\\' or i[j] == '/' or i[j] == '+':
                     terminal.insert('end', i[j], 'slategray')
+                
+                # --------------------------
+                elif i[j] == '#':
+                    # 提取id
+                    # 反向检查字符串i，如果发现')'就截取直到前面'='的内容
+                    for m in range(len(i)-1, -1, -1):
+                        if i[m] == ')':
+                            for l in range(m-1, -1, -1):
+                                if i[l] == '=':
+                                    id = i[l+1:m]
+                                    break
+                            break
+
+                    configid = 'id>' + id
+
+                    terminal.tag_configure(configid, foreground='#ffffff',
+                        selectforeground='#000000', selectbackground='#ffffff', underline=True)
+                    terminal.tag_bind('id>'+id, '<Button-1>', lambda event, id=id: self.InsertMDFromId(id))
+                    # print(id)
+                    # 显示#之后的部分
+                    terminal.insert('end', i[j+1:], configid)
+                    break
+                # --------------------------
+
                 else:
                     terminal.insert('end', i[j])
 
-    # def printchanges(self, self.process_path_in, terminal, self.mode):
-    #     global path_using
-    #     # changes_boolean = False
-    #     # add_boolean = False
-    #     out = []
-    #     # dirs = os.path.listdir(self.process_path_in)
-    #     for i in self.process_path_in['changes']:
-    #         out.append(i)
-    #     for i in self.process_path_in['delete']:
-    #         out.append(i)
-    #     for i in self.process_path_in['create']:
-    #         out.append(i)
+    def getMDFromId(self, id):
+        # 从path_using/.filemanager/main/commits里找到排序为int(id)的文件夹
+        dirs = os.listdir(os.path.join(self.path_using, '.filemanager', 'commits'))
+        float_dir = []
+        for l in dirs:
+            float_dir.append(round(float(l)))
+        float_dir.sort()
+        open_path = os.path.join(self.path_using, '.filemanager', 'main', 'commits',str(float_dir[int(id)]), 'README.md')
+        return open_path
 
-    #     if out == [] and self.mode != '!destroy' and self.changes == {'changes': [], 'delete': [], 'create': []}:
-    #         terminal.insert('end', '\n没有最近更改的文件')
-    #         if self.adder_opened:
-    #             adder('!destroy')
-    #         if window_opened:
-    #             show_changes_in_box(out, '!destroy')
-    #         # terminal.delete('0.0','end')
-    #         # terminal.insert('end', '\n没有文件\n')
-
-    #     # elif len(out) < 10:
-    #     #     terminal.insert('end', '\n更改的文件列表:\n')
-    #     #     for i in out:
-    #     #         terminal.insert('end', i + '\n')
-
-    #     else:
-    #         show_changes_in_box(out, terminal, self.mode)
-    #         # with open(rf'{os.getcwd()}\cache.txt', 'w', encoding='utf-8') as f:
-    #         #     f.write('更改的文件列表，确认后请关闭记事本:\n')
-    #         #     for i in out:
-    #         #         f.write(i + '\n')
-    #         #     f.close()
-    #         # os.system(rf'{os.getcwd()}\cache.txt')
+    def InsertMDFromId(self, id):
+        def onMouseUp():
+            self.inputen.delete(0, 'end')
+            self.inputen.insert('end', 'show detailedCommitText ' + id)
+            self.inputen.focus_set()
+            self.terminal.see('end')
+        self.terminal.bind('<ButtonRelease-1>', lambda v=0: onMouseUp())
 
 # 创建打开文件函数，并按换行符分割内容
+    # 解析MarkDown并显示
+    def parseMarkDown(self, file_path):
+        terminal = self.terminal
+        line1 = '---------------------------------------------------------------------'
+        line2 = '====================================================================='
+        terminal.insert('end','\n')
+        terminal.insert('end', line1 + '\n')
+        terminal.insert('end',file_path + '\n')
+        terminal.insert('end', line1 + '\n')
+        # this_line = '—————————————————————————————————————————————————————————————————————'
+        def insert_markdown(terminal, this_id, text, font_size=0, isbold=False, isitalic=False,  isstrikethrough=False, islink=False, ishighlight=False, isunderline=False):
+            if text != '':
+                this_id= str(this_id)
+                bold=''
+                italic=''
+                if not ishighlight:
+                    if font_size != 0:
+                        terminal.tag_config(this_id, foreground='#ffffff',
+                                    selectforeground='#000000', selectbackground='#ffffff', 
+                                    underline=isunderline,overstrike=isstrikethrough,font=(
+                                    'consolas', 13 + 6 - font_size, "bold"))
+                    else:
+                        if isbold:
+                            bold = 'bold'
+                        if isitalic:
+                            italic = 'italic'
+                        terminal.tag_config(this_id, foreground='#ffffff',
+                                    selectforeground='#000000', selectbackground='#ffffff', 
+                                    underline=isunderline,overstrike=isstrikethrough,font=(
+                                    'consolas', 13 , bold + " " + italic))
+
+                        # terminal.tag_config(this_id,background="#ffffff", foreground='#000000', selectforeground='#ffffff',
+                        #              selectbackground='#000000', 
+                        #             underline=isunderline,overstrike=isstrikethrough,font=(
+                        #             'consolas', 13 , bold + " " + italic))
+                else:
+                    if font_size != 0:
+                        terminal.tag_config(this_id,background="#ffffff", foreground='#000000',
+                                    selectforeground='#ffffff', selectbackground='#000000', 
+                                    underline=isunderline,overstrike=isstrikethrough,font=(
+                                    'consolas', 13 + 6 - font_size, "bold"))
+                    else:
+                        if isbold:
+                            bold = 'bold'
+                        if isitalic:
+                            italic = 'italic'
+                        terminal.tag_config(this_id,background="#ffffff", foreground='#000000',
+                                    selectforeground='#ffffff', selectbackground='#000000', 
+                                    underline=isunderline,overstrike=isstrikethrough,font=(
+                                    'consolas', 13 , bold + " " + italic))
+
+                terminal.insert('end', text, this_id)
+                terminal.update()
+                terminal.see('end')
+
+        # 反复循环拆解文字直到没有标签为止
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            Mlines = f.read()
+            f.close()
+        if Mlines.startswith("\ufeff"):
+            # 删掉这个\ufeff
+            Mlines = Mlines[1:]
+            # with open(file_path, 'r', encoding='utf-8-sig') as f:
+            #     Mlines = f.read()
+            #     f.close()
+        Mlines = Mlines.splitlines()
+
+        lines = []
+        # 将Mlines中没有''作为间隔的元素合并，并添加到新数组lines里
+        for i in range(len(Mlines)):
+            if Mlines[i] != '':
+                if i != 0 and i-1>0 and Mlines[i-1] != '':
+                    lines[-1] += '\n' + Mlines[i]
+                else:
+                    lines.append(Mlines[i])
+                    # lines.append('')
+        
+        Mlines = lines
+
+        # 将Mlines里的每两个元素之间插入一个空元素
+        lines = []
+        for i in Mlines:
+            lines.append(i)
+            lines.append('')
+        
+        Mlines = lines
+
+            # if Mlines[i] != '':
+            #     if i != 0 and i-1>0 and Mlines[i-1] != '':
+        passed = 0
+        for line in range(len(Mlines)):
+            this_line = Mlines[line]
+
+            font_size = 0
+
+            gopass = False
+            continuity = False
+
+            # 判断是否是标题
+            # 查找开头#的数量
+            if this_line.startswith('#'):
+                i = 0
+                for i in range(len(this_line)):
+                    if this_line[i] != '#':
+                        break
+                # 判断是否是标题
+                if this_line[i] == ' ':
+                    # 判断标题级别
+                    font_size = i
+
+                # 去除这一行首尾的所有#以及与之连接的空格
+                this_line = this_line.strip('# ')
+                gopass = True
+                
+            # 判断是否是列表
+            # 如果这一行开头是空格和-或*，则是列表，或者是分界线
+            # 列表的话后面一定会跟着空格
+            # -前面的空格数是列表的级别
+            # 如果开头是空格，就一直读取字符，直到不是空格，这时返回的i就是列表级别
+            if this_line.startswith(' ') or this_line.startswith('-') or this_line.startswith('*') or this_line.startswith('+'):
+                i = 0
+                for i in range(len(this_line)):
+                    if this_line[i] != ' ':
+                        break
+                if (this_line[i] == '-' or this_line[i] == '*' or this_line[i] == '+') and len(this_line) > i+1 and this_line[i+1] == ' ':
+                    # 判断列表级别
+                    # font_size = i
+                    # 去除这一行第一个-或*，但保留前面的缩进
+                    this_line = this_line[:i] + '·' + this_line[i+1:]
+
+                else:
+                    # 去除行内所有空格及tab
+                    line_small = this_line.replace(' ', '')
+
+                    # 判断是否是分界线
+                    # 三个或更多的「减号 -」、「星号 *」、「下划线 -」的方式创建一条相当于 HTML 语法中<hr/>一样的分隔线。这三个符号之间可以包含空格
+                    if line_small.startswith('---') or line_small.startswith('***') or line_small.startswith('___'):
+                        # 去除这一行第一个-或*，但保留前面的缩进
+                        # this_line = '—————————————————————————————————————————————————————————————————————'
+                        this_line = line2
+                        # this_line = '----------------------------------------'
+                        gopass = True
+            # 如果是>，则是引用
+            elif this_line.startswith('>'):
+                continuity = True
+
+            # 引用的格式
+            quote = 0
+            for letter in range(len(this_line)):
+                # this_line = this_line.replace('    ', '█')
+                if this_line[letter] == '>' and continuity:
+                # 判断引用级别
+                # font_size = 1
+                    quote += 1
+                    # pass
+                # 去除这一个>，但保留前面的缩进
+                    # this_line = this_line[:letter] + ' █ ' + this_line[letter+1:]
+                # break
+                elif this_line[letter] != ' ':
+                    break
+                
+            if continuity:
+                this_line = ' █' * quote + ' ' + this_line[letter:]
+                # 在每一行的开头加上引用符号
+                this_line =this_line.replace('\n', '\n' + ' █' * quote + ' ')
+                continuity = False
+
+            # 加粗的格式
+            # 1个星号或下划线包围的文本会被转换为斜体的文本
+            # 2个星号或下划线包围的文本会被转换为加粗的文本
+            # 3个星号或下划线包围的文本会被转换为加粗的斜体的文本
+
+            # 删除线的格式
+            # 2个波浪线包围的文本会被转换为删除线的文本
+
+            # 高亮的格式
+            # 2个等号包围的文本会被转换为高亮的文本
+
+            # status字典用来记录当前的状态
+            # 当status有改变的时候，就要插入文本
+            status = {'bold': False, 'italic': False, 'underline': False, 'strikethrough': False, 'highlight': False}
+
+            # 当读取到特殊字符的时候，就要改变status的值
+            # 读取到特殊字符的时候，就要插入文本
+            # 特殊字符为*、**、***、_、__、___、~~、==
+            # 两个特殊字符为一对，当读取到一对中的第一个时，就把status中对应的值改为True，
+            # 读取到第二个时，就把status中对应的值改为False
+
+            text_to_insert = ''
+            if not gopass:
+                # time.sleep(1)
+                while True:
+                    # 如果没有特殊字符就直接插入
+                    if '*' not in this_line and '_' not in this_line and '~' not in this_line and '=' not in this_line:
+                        text_to_insert += this_line
+                        insert_markdown(terminal, passed, text_to_insert, font_size=font_size, isbold=status['bold'], isitalic=status['italic'],  isstrikethrough=status['strikethrough'], ishighlight=status['highlight'], isunderline=status['underline'])
+                        break
+                    for letter in range(len(this_line)):
+                        # 如果这个*后面还存在一个*那么这就是一对*，可以用来斜体，否则当做一般字符处理
+                        # !https://zhidao.baidu.com/question/207742983427139605.html
+                        old_status = status.copy()
+                        if this_line[letter] == '*' and ('*' in this_line[letter+1:] or status['italic']):
+                            if letter+1 < len(this_line) and this_line[letter+1] == '*' and ('**' in this_line[letter+2:] or status['bold']):
+                                if letter+2 < len(this_line) and this_line[letter+2] == '*' and ('***' in this_line[letter+3:] or (status['bold'] and status['italic'])):
+                                    status['bold'] = not status['bold']
+                                    status['italic'] = not status['italic']
+                                    this_line = this_line[letter+3:]
+                                    # this_line = this_line[:letter] + this_line[letter+3:]
+                                else:
+                                    status['bold'] = not status['bold']
+                                    this_line = this_line[letter+2:]
+                                    # this_line = this_line[:letter] + this_line[letter+2:]
+                            else:
+                                status['italic'] = not status['italic']
+                                this_line = this_line[letter+1:]
+                                # this_line = this_line[:letter] + this_line[letter+1:]
+                            # 插入文本
+                            passed += 1
+                            insert_markdown(terminal, passed, text_to_insert, font_size=font_size, isbold=old_status['bold'], isitalic=old_status['italic'],  isstrikethrough=old_status['strikethrough'], ishighlight=old_status['highlight'], isunderline=old_status['underline'])
+                            text_to_insert = ''
+                            break
+                        elif '*' == this_line[letter]:
+                            text_to_insert += this_line[letter]
+                            this_line = this_line[letter+1:]
+                            passed += 1
+                            # this_line = this_line[:letter] + this_line[letter+1:]
+                            break
+
+                        # _与*等效
+                        elif this_line[letter] == '_' and ('_' in this_line[letter+1:] or status['italic']):
+                            if letter+1 < len(this_line) and this_line[letter+1] == '_' and ('__' in this_line[letter+2:] or status['bold']):
+                                if letter+2 < len(this_line) and this_line[letter+2] == '_' and ('___' in this_line[letter+3:] or (status['bold'] and status['italic'])):
+                                    status['bold'] = not status['bold']
+                                    status['italic'] = not status['italic']
+                                    this_line = this_line[letter+3:]
+                                    # this_line = this_line[:letter] + this_line[letter+3:]
+                                else:
+                                    status['bold'] = not status['bold']
+                                    this_line = this_line[letter+2:]
+                                    # this_line = this_line[:letter] + this_line[letter+2:]
+                            else:
+                                status['italic'] = not status['italic']
+                                this_line = this_line[letter+1:]
+                                # this_line = this_line[:letter] + this_line[letter+1:]
+                            # 插入文本
+                            passed += 1
+                            insert_markdown(terminal, passed, text_to_insert, font_size=font_size, isbold=old_status['bold'], isitalic=old_status['italic'],  isstrikethrough=old_status['strikethrough'], ishighlight=old_status['highlight'], isunderline=old_status['underline'])
+                            text_to_insert = ''
+                            break
+                        elif '_' == this_line[letter]:
+                            text_to_insert += this_line[letter]
+                            this_line = this_line[letter+1:]
+                            passed += 1
+                            # this_line = this_line[:letter] + this_line[letter+1:]
+                            break
+
+                        # ~~为删除线
+                        elif this_line[letter] == '~' and (letter+2 < len(this_line) and '~~' in this_line[letter+2:] or status['strikethrough']):
+                            if letter+1 < len(this_line) and this_line[letter+1] == '~' and ('~~' in this_line[letter+2:] or status['strikethrough']):
+                                status['strikethrough'] = not status['strikethrough']
+                                this_line = this_line[letter+2:]
+                                # this_line = this_line[:letter] + this_line[letter+2:]
+                            else:
+                                status['strikethrough'] = not status['strikethrough']
+                                this_line = this_line[letter+1:]
+                                # this_line = this_line[:letter] + this_line[letter+1:]
+                            # 插入文本
+                            passed += 1
+                            insert_markdown(terminal, passed, text_to_insert, font_size=font_size, isbold=old_status['bold'], isitalic=old_status['italic'],  isstrikethrough=old_status['strikethrough'], ishighlight=old_status['highlight'], isunderline=old_status['underline'])
+                            text_to_insert = ''
+                            break
+                        elif '~' == this_line[letter]:
+                            text_to_insert += this_line[letter]
+                            this_line = this_line[letter+1:]
+                            passed += 1
+                            # this_line = this_line[:letter] + this_line[letter+1:]
+                            break
+
+                        # ==为高亮
+                        elif this_line[letter] == '=' and (letter+2 < len(this_line) and'==' in this_line[letter+1:] or status['highlight']):
+                            if letter+1 < len(this_line) and this_line[letter+1] == '=' and ('==' in this_line[letter+2:] or status['highlight']):
+                                status['highlight'] = not status['highlight']
+                                this_line = this_line[letter+2:]
+                                # this_line = this_line[:letter] + this_line[letter+2:]
+                            else:
+                                status['highlight'] = not status['highlight']
+                                this_line = this_line[letter+1:]
+                                # this_line = this_line[:letter] + this_line[letter+1:]
+                            # 插入文本
+                            passed += 1
+                            insert_markdown(terminal, passed, text_to_insert, font_size=font_size, isbold=old_status['bold'], isitalic=old_status['italic'],  isstrikethrough=old_status['strikethrough'], ishighlight=old_status['highlight'], isunderline=old_status['underline'])
+                            text_to_insert = ''
+                            break
+                        elif '=' == this_line[letter]:
+                            text_to_insert += this_line[letter]
+                            this_line = this_line[letter+1:]
+                            passed += 1
+                            # this_line = this_line[:letter] + this_line[letter+1:]
+                            break
+
+                        else:
+                            text_to_insert += this_line[letter]
+                passed += 1
+                insert_markdown(terminal, passed, '\n', font_size=font_size, isbold=status['bold'], isitalic=status['italic'],  isstrikethrough=status['strikethrough'], ishighlight=status['highlight'], isunderline=status['underline'])
+
+            if font_size != 0:
+                this_line = (font_size - 1) * '  ' + this_line
+                passed += 1
+                insert_markdown(terminal, passed, this_line + '\n', font_size)
+        
+        # terminal.insert('end', line1 + '\n')
+        # terminal.insert('end',"{:^{}}".format('File End',len(line1)) + '\n')
+        # terminal.insert('end', line1 + '\n')
+            # else:
+            #     # text_to_insert = this_line
+            #     insert_markdown(terminal, round(passed), this_line + '\n')
+
 
     def readfile(self, filename):
         try:
@@ -2425,7 +2601,7 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 
 def run_command(command, terminal, commandinput, fm):
     global path_using, command_inputed,  now_path, start_path, commit_text, command_chosen, used_before_command, asked_recommit, commit_text, need_update
-
+    global attach
     def contiune_command():
         terminal.insert('end', '\n')
         # # print(info_add)
@@ -2636,7 +2812,13 @@ def run_command(command, terminal, commandinput, fm):
                     else:
                         commit_text = text1[1]
                     if not commit_text == '':
-                        fm.commit(commit_text, '')
+                        if commit_text[0] == '#':
+                            terminal.insert('end', "\nerror:提交说明不能以#开头。", 'red')
+                        else:
+                            if '-f' in command_inputed:
+                                fm.commit(commit_text, '', attach=True)
+                            else:
+                                fm.commit(commit_text, '')
                     contiune_command()
                 else:
                     terminal.insert('end', '\nerror:没有要提交的内容', 'red')
@@ -2710,6 +2892,14 @@ def run_command(command, terminal, commandinput, fm):
                         else:
                             for i in monitored:
                                 terminal.insert('end', '\n' + i)
+                    elif command_inputed[1] == 'detailedCommitText':
+                        if len(command_inputed) > 2:
+                            id = command_inputed[2]
+                            open_path = fm.getMDFromId(id)
+                            if os.path.exists(open_path):
+                                fm.parseMarkDown(open_path)
+                            else:
+                                terminal.insert('end', '\nerror:无效的id', 'red')
                 else:
                     terminal.insert('end', '\nerror:无效的参数', 'red')
                 contiune_command()
@@ -2772,7 +2962,10 @@ def run_command(command, terminal, commandinput, fm):
                             # terminal.insert('end', '\n' + command + '\n')
                             terminal.update()
                             if command == 'recommit':
-                                fm.recommit(commit_text)
+                                if attach:
+                                    fm.recommit(commit_text, attach=True)
+                                else:
+                                    fm.recommit(commit_text)
                         contiune_command()
                         asked_recommit = False
                     else:
@@ -2791,6 +2984,14 @@ def run_command(command, terminal, commandinput, fm):
                             commit_text = text1[1]
 
                         if commit_text != '':
+                            if commit_text[0] == '#':
+                                terminal.insert('end', "\nerror:提交说明不能以#开头。", 'red')
+                            else:
+                                if '-f' in command_inputed:
+                                    attach=True
+                                else:
+                                    attach=False
+
                             terminal.insert('end', '\n为了确认，在下方输入"recommit"\n')
                             terminal.window_create('end', window=commandinput)
                             commandinput.focus_set()
@@ -2855,6 +3056,9 @@ def run_command(command, terminal, commandinput, fm):
 
             elif command_inputed[0] == "exit":
                 sys.exit(0)
+            
+            # elif command_inputed[0] == "pm":
+            #     fm.parseMarkDown('s')
 
             else:
                 # terminal.insert('end', command)
@@ -2921,9 +3125,8 @@ def run_command_from_file(file_path, values = ''):
     commands = command_file.read().splitlines()
     command_file.close()
     if commands[0].startswith("\ufeff"):
-        command_file = open(file_path, 'r', encoding='utf-8-sig')
-        commands = command_file.read().splitlines()
-        command_file.close()
+        # 删掉这个\ufeff
+        commands[0] = commands[0][1:]
     os.chdir(start_path)
 
     for cmd in commands:
@@ -3058,7 +3261,19 @@ TerminalText['state'] = 'n'
 TerminalText.insert('end', f'FileManager(FM) v{terminal_infos.version}\n')
 TerminalText.insert('end', 'Type "help" or "?" for help.\n')
 
-fm = FileManager(TerminalText)
+# 命令输入框
+command_input = tk.Entry(TerminalText, font=('consolas', 13), fg='white', bg='black',
+                         insertbackground='white', selectforeground='black', selectbackground='white', relief='flat', width=66)
+command_input.bind('<Return>', lambda v=0: run_command(
+    command_input.get(), TerminalText, command_input, fm))
+# 在命令输入框中按F7弹出命令列表窗口
+command_input.bind('<F7>', lambda v=0: post_inputlist(command_input))
+
+# 上下箭头选择命令
+command_input.bind('<Up>', lambda v=0: commandup(command_input))
+command_input.bind('<Down>', lambda v=0: commanddown(command_input))
+
+fm = FileManager(TerminalText, command_input)
 fm.start_path = start_path
 fm.path_using = path_using
 
@@ -3071,17 +3286,6 @@ for i in logo:
 TerminalText.insert('end', path_using + fm.info_add+'\n', 'green')
 TerminalText.insert('end', f'$ ')
 
-# 命令输入框
-command_input = tk.Entry(TerminalText, font=('consolas', 13), fg='white', bg='black',
-                         insertbackground='white', selectforeground='black', selectbackground='white', relief='flat', width=66)
-command_input.bind('<Return>', lambda v=0: run_command(
-    command_input.get(), TerminalText, command_input, fm))
-# 在命令输入框中按F7弹出命令列表窗口
-command_input.bind('<F7>', lambda v=0: post_inputlist(command_input))
-
-# 上下箭头选择命令
-command_input.bind('<Up>', lambda v=0: commandup(command_input))
-command_input.bind('<Down>', lambda v=0: commanddown(command_input))
 
 # 插入命令输入框
 TerminalText.window_create('end', window=command_input)
