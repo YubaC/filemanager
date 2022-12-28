@@ -51,7 +51,7 @@ import need.draw as draw
 
 import json
 
-import traceback
+# import traceback
 
 # from tkinter.messagebox import askokcancel
 
@@ -86,16 +86,13 @@ else:
     path_using = start_path
 
 # 引入一堆库
-
-
 class tk:
     from tkinter import Tk, Entry, Toplevel, Listbox
     # from tkinter import Tk, Entry, Toplevel, Listbox, Scrollbar
     from tkinter.scrolledtext import ScrolledText
 
+
 # 设置信息，可选
-
-
 class terminal_infos:
     with open(os.path.join(start_path, 'version.txt'), 'r', encoding='utf-8') as f:
         version = f.read()
@@ -118,8 +115,6 @@ del input,print,set,Back''', running_space)  # 先把那些Python基础函数替
     # from os.path import isfile,isdir,join
 
 # 进度展示
-
-
 class ShowProgress(object):
     def __init__(self, terminal, title):
         self.terminal = terminal
@@ -136,6 +131,7 @@ class ShowProgress(object):
         terminal.see('end')
 
 
+# 核心代码
 class FileManager(object):
     def __init__(self, terminal, command_input):
         self.terminal = terminal
@@ -367,7 +363,7 @@ class FileManager(object):
                                           'main', 'branches.json'), 'r', encoding='utf-8')
                     info_data = json.load(f)
                     f.close()
-                    self.now_at = int(info_data['self.now_at'])
+                    self.now_at = int(info_data['now_at'])
 
             # else:
             #     terminal.insert('end',"error:这不是一个filemanager仓库")
@@ -2270,7 +2266,7 @@ class FileManager(object):
     # 写分支
     def write_branch(self, tree_in):
         path_using = self.path_using
-        output = {'branches': tree_in, 'self.now_at': self.now_at}
+        output = {'branches': tree_in, 'now_at': self.now_at}
         # dumps 将数据转换成字符串
         info_json = json.dumps(output, sort_keys=False,
                                indent=4, separators=(',', ': '))
@@ -2576,6 +2572,40 @@ class FileManager(object):
     def icon_for_window(self, tkwindow, temofilename='fm.ico'):
         tkwindow.iconbitmap(default=temofilename)
 
+    def get_lastest_commit(self):
+        f = open(os.path.join(self.path_using, '.filemanager',
+                            'main', 'branches.json'), 'r', encoding='utf-8')
+        info_data = json.load(f)
+        f.close()
+        branch_input = info_data['branches']
+        branch = []
+
+        # 读取并写入分支
+        branch_len = 0
+        for i in range(len(branch_input)):
+            branch.append({'start': int(branch_input[i]['start']), 'include': {
+            }, 'end': int(branch_input[i]['end'])})
+            for j in branch_input[i]['include'].keys():
+                try:
+                    branch[i]['include'][int(
+                        j)] = branch_input[i]['include'][j]
+                    if int(j) > branch_len:
+                        branch_len = int(j)
+                except:
+                    pass
+
+        now_branch_max_commit = 0
+
+        for i in range(len(branch)):
+            if fm.now_at in list(branch[i]['include'].keys()):
+                now_at_branch = i
+                for j in list(branch[i]['include'].keys()):
+                    if int(j) > now_branch_max_commit:
+                        now_branch_max_commit = int(j)
+                break
+
+        return now_branch_max_commit
+
     # def merge(merge_branch,merge_text):
         
 
@@ -2597,10 +2627,7 @@ def icon_for_window(tkwindow, temofilename='fm.ico'):
 #         pass
 
 # 运行输入的内容调用的函数
-
 # 窗口代码
-
-
 def run_command(command, terminal, commandinput, fm):
     global path_using, command_inputed,  now_path, start_path, commit_text, command_chosen, used_before_command, asked_recommit, commit_text, need_update
     global attach
@@ -2857,12 +2884,18 @@ def run_command(command, terminal, commandinput, fm):
                 elif fm.inited:
                     if len(command_inputed) > 1:
                         try:
-                            fm.now_at = int(command_inputed[1])
+                            if command_inputed[1] == '.':
+                                
+                                fm.now_at = fm.get_lastest_commit()
+                            else:
+                                fm.now_at = int(command_inputed[1])
                         except:
                             pass
                     # terminal.insert('end', command)
                     # if len(command_inputed) == 1:
-                    fm.checkout(fm.now_at)
+                        fm.checkout(fm.now_at)
+                    else:
+                        terminal.insert('end', '\nerror:无效的参数', 'red')
                     # else:
                     # checkout(self.now_at,command_inputed[1],terminal)
                 else:
@@ -2999,6 +3032,20 @@ def run_command(command, terminal, commandinput, fm):
                             commandinput.focus_set()
                             asked_recommit = True
 
+                            if ('--no-confirm') in command_inputed:
+                                asked_recommit = False
+                                terminal.config(state='n')  # 解锁terminal(Text)
+
+                                terminal.delete('end')  # 删除输入控件
+                                # commandinput.delete(0, 'end')  # 删除控件里输入的文本
+                                terminal.update()
+                                if attach:
+                                    fm.recommit(commit_text, attach=True)
+                                else:
+                                    fm.recommit(commit_text)
+                                contiune_command()
+
+
                     # entry_str = simpledialog.askstring(
                     #     title='确认', prompt='为了确认，在下方输入:RECOMMIT ')
                     # pattern1 = re.compile(r"'(\w+)'")
@@ -3007,9 +3054,64 @@ def run_command(command, terminal, commandinput, fm):
                     terminal.insert('end', '\nerror:没有要提交的内容', 'red')
                     contiune_command()
 
+            # elif command_inputed[0] == 'reset':
+            #     if '-?' in command_inputed:
+            #         fm.help('reset')
+            #         contiune_command()
+            #     # terminal.insert('end', command)
+            #     elif not fm.process_path == {'changes': [], 'delete': [], 'create': []}:
+            #         if asked_recommit:
+            #             terminal.config(state='n')  # 解锁terminal(Text)
+
+            #             terminal.delete('end')  # 删除输入控件
+            #             # commandinput.delete(0, 'end')  # 删除控件里输入的文本
+            #             terminal.update()
+            #             if str(command).strip() == '':  # 如果啥也没输入
+            #                 terminal.insert('end', command)  # 就复述输入内容
+            #             else:
+            #                 # terminal.insert('end', '\n' + command + '\n')
+            #                 terminal.update()
+            #                 if command == 'reset':
+            #                     if attach:
+            #                         fm.recommit(commit_text, attach=True)
+            #                     else:
+            #                         fm.recommit(commit_text)
+            #             contiune_command()
+            #             asked_recommit = False
+            #         else:
+            #             all_text = command
+            #             # print(all_text)
+            #             # text1 = pattern1.findall(all_text)
+            #             # text2 = pattern2.findall(all_text)
+            #             commit_text = ''
+            #             text1 = all_text.split("\"")
+            #             text2 = all_text.split("\'")
+            #             if len(text1) <= 1 and len(text2) <= 1:
+            #                 terminal.insert('end', "\nerror:没有提交说明", 'red')
+            #             elif len(text1) <= 1:
+            #                 commit_text = text2[1]
+            #             else:
+            #                 commit_text = text1[1]
+
+            #             if commit_text != '':
+            #                 if commit_text[0] == '#':
+            #                     terminal.insert('end', "\nerror:提交说明不能以#开头。", 'red')
+            #                 else:
+            #                     if '-f' in command_inputed:
+            #                         attach=True
+            #                     else:
+            #                         attach=False
+
+            #                 terminal.insert('end', '\n为了确认，在下方输入"recommit"\n')
+            #                 terminal.window_create('end', window=commandinput)
+            #                 commandinput.focus_set()
+            #                 asked_recommit = True
+
             elif command_inputed[0] == 'update':
-                if need_update:
-                    os.system(os.path.join(start_path, 'goupdate.bat'))
+                if '-?' in command_inputed:
+                    fm.help('update')
+                elif need_update:
+                    os.startfile(os.path.join(start_path, 'updater.exe --no-confirm'))
                     sys.exit(0)
                 else:
                     terminal.insert('end', '\nerror:没有更新', 'red')
@@ -3017,7 +3119,10 @@ def run_command(command, terminal, commandinput, fm):
 
             elif command_inputed[0] == "run":
                 # 如果len(command_inputed) == 1，说明没有输入文件名
-                if len(command_inputed) == 1:
+                if '-?' in command_inputed:
+                    fm.help('run')
+                    contiune_command()
+                elif len(command_inputed) == 1:
                     terminal.insert('end', '\nerror:没有输入文件名', 'red')
                     contiune_command()
                 else:
@@ -3036,7 +3141,7 @@ def run_command(command, terminal, commandinput, fm):
                                 try:
                                     run_command_from_file(command_inputed[1], values=value)
                                 except Exception as e:
-                                    terminal.insert('end', traceback.format_exc(), 'red')
+                                    # terminal.insert('end', traceback.format_exc(), 'red')
                                     terminal.insert('end', f'\nerror:{e}', 'red')
                                     contiune_command()
 
@@ -3048,7 +3153,7 @@ def run_command(command, terminal, commandinput, fm):
                             try:
                                 run_command_from_file(command_inputed[1])
                             except Exception as e:
-                                terminal.insert('end', traceback.format_exc(), 'red')
+                                # terminal.insert('end', traceback.format_exc(), 'red')
                                 terminal.insert('end', f'\nerror:{e}', 'red')
                                 contiune_command()
                     else:
@@ -3057,7 +3162,10 @@ def run_command(command, terminal, commandinput, fm):
                 os.chdir(start_path)
 
             elif command_inputed[0] == "exit":
-                sys.exit(0)
+                if '-?' in command_inputed:
+                    fm.help('exit')
+                else:
+                    sys.exit(0)
             
             # elif command_inputed[0] == "pm":
             #     fm.parseMarkDown('s')
@@ -3068,7 +3176,7 @@ def run_command(command, terminal, commandinput, fm):
                 contiune_command()
 
     except Exception as e:
-        terminal.insert('end', traceback.format_exc(), 'red')
+        # terminal.insert('end', traceback.format_exc(), 'red')
         terminal.insert('end', f'\nerror:{e}', 'red')
         contiune_command()
 
@@ -3212,7 +3320,7 @@ def checkUpdate():
     global need_update
     # print("t1")
     # need_update不为空时，说明有更新
-    need_update = os.popen(os.path.join(start_path, 'checkupdate.exe')).read()
+    need_update = os.popen('updater.exe --show-version').read()
 
     # print(os.popen(os.path.join(start_path, 'updater.exe')).read())
     # print(os.popen('updater.exe').read())
@@ -3301,8 +3409,12 @@ def click(event):
 
 # 说明有参数
 if len(sys.argv) > 1:
-    # 将sys.argv第二位到最后一位的参数合并为一个字符串
-    command = ' '.join(sys.argv[1:])
+    # 如果是个文件 => 执行它
+    if os.path.isfile(sys.argv[1]):
+        command = 'run ' + sys.argv[1]
+    else:
+        # 将sys.argv第二位到最后一位的参数合并为一个字符串
+        command = ' '.join(sys.argv[1:])
     # 传入参数
     command_input.insert('end', command)
     # 执行命令
