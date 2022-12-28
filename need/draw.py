@@ -262,8 +262,8 @@ def draw(tree_input, now_at):
             out[i] += all_dict[ok_number]
             out[i] += ' (id=' + str(ok_number) + ')'
             if ok_number == now_at:
-                out[i] += '  ←—'
-                # out[i] += '  👈'
+                # out[i] += '  ←—'
+                out[i] += '    ☜'
             ok_number += 1
 
     return (out)
