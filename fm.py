@@ -3129,7 +3129,7 @@ def run_command(command, terminal, commandinput, fm):
                     # 判断文件是否存在
                     os.chdir(path_using)
                     if os.path.exists(command_inputed[1]):
-                        contiune_command()
+                        # contiune_command()
                         # 如果command字符串里存在--values参数，则提取--values:后面的引号里值
                         if '--values' in command:
                             pattern = re.compile(r'--values:(.*)')
@@ -3415,10 +3415,11 @@ if len(sys.argv) > 1:
     else:
         # 将sys.argv第二位到最后一位的参数合并为一个字符串
         command = ' '.join(sys.argv[1:])
-    # 传入参数
-    command_input.insert('end', command)
-    # 执行命令
-    run_command(command_input.get(), TerminalText, command_input, fm)
+    if not os.path.isdir(command):
+        # 传入参数
+        command_input.insert('end', command)
+        # 执行命令
+        run_command(command_input.get(), TerminalText, command_input, fm)
 
 # focus
 root.bind("<Double-Button-1>", click)
