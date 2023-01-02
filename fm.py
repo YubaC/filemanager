@@ -1265,8 +1265,9 @@ class FileManager(object):
 
         if self.inited:
             if len(command_inputed) == 1:
+                pass
                 # self.adder('add')
-                self.printchanges()
+                # self.printchanges()
 
             elif command_inputed[1] == '.':
                 for i in self.changes['changes']:
@@ -3111,7 +3112,7 @@ def run_command(command, terminal, commandinput, fm):
                 if '-?' in command_inputed:
                     fm.help('update')
                 elif need_update:
-                    os.startfile(os.path.join(start_path, 'updater.exe --no-confirm'))
+                    os.startfile('updater.exe')
                     sys.exit(0)
                 else:
                     terminal.insert('end', '\nerror:没有更新', 'red')
