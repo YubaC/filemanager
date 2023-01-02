@@ -2742,9 +2742,7 @@ def run_command(command, terminal, commandinput, fm):
                     new_path = ''
                     # 如果len(command_inputed) > 2, 则有可能是路径中存在空格
                     # 这时尝试提取引号内的内容
-                    if len(command_inputed) == 2:
-                        new_path = command_inputed[1]
-                    elif '"' in command or "'" in command:
+                    if '"' in command or "'" in command:
                         all_text = command
                         # print(all_text)
                         # text1 = pattern1.findall(all_text)
@@ -2757,6 +2755,8 @@ def run_command(command, terminal, commandinput, fm):
                             new_path = text2[1]
                         else:
                             new_path = text1[1]
+                    elif len(command_inputed) == 2:
+                        new_path = command_inputed[1]
                         
                     if new_path != '':
                         try:
